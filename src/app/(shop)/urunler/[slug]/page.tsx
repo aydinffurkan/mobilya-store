@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Product } from '@/types'
-import AddToCartButton from '@/components/products/AddToCartButton'
-import { Badge } from '@/components/ui/badge'
+import ProductPurchasePanel from '@/components/products/ProductPurchasePanel'
+import ProductImageGallery from '@/components/products/ProductImageGallery'
+import ProductViewTracker from '@/components/products/ProductViewTracker'
 import { Separator } from '@/components/ui/separator'
 import { Truck, Shield, Wrench, RotateCcw } from 'lucide-react'
 
@@ -16,7 +17,7 @@ async function getProduct(slug: string): Promise<Product | null> {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('products')
-      .select('*, category:categories(*)')
+      .select('*, category:categories(*), variants:product_variants(*), components:product_components(*)')
       .eq('slug', slug)
       .eq('is_active', true)
       .single()
@@ -33,10 +34,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   if (!product) notFound()
 
-  const discountPercent = product.sale_price
-    ? Math.round((1 - product.sale_price / product.price) * 100)
-    : null
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
@@ -48,29 +45,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         <span className="text-foreground font-medium">{product.name}</span>
       </nav>
 
+      <ProductViewTracker productId={product.id} />
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Images */}
-        <div className="space-y-3">
-          <div className="aspect-square bg-muted rounded-2xl flex items-center justify-center text-muted-foreground relative overflow-hidden">
-            {product.images?.[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="text-center">
-                <div className="text-6xl mb-2">🛋️</div>
-                <p className="text-sm">Görsel yakında eklenecek</p>
-              </div>
-            )}
-            {discountPercent && (
-              <Badge className="absolute top-3 left-3 bg-red-500 text-white">-%{discountPercent}</Badge>
-            )}
-          </div>
-          {/* Thumbnail row */}
-          <div className="grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="aspect-square bg-muted rounded-lg border-2 border-transparent hover:border-[#8B6914] cursor-pointer transition-colors" />
-            ))}
-          </div>
+        <div className="relative">
+          <ProductImageGallery images={product.images ?? []} name={product.name} />
         </div>
 
         {/* Details */}
@@ -80,32 +59,14 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             <h1 className="text-2xl md:text-3xl font-bold mt-1">{product.name}</h1>
           </div>
 
-          {/* Price */}
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-[#8B6914]">
-              {(product.sale_price ?? product.price).toLocaleString('tr-TR')} ₺
-            </span>
-            {product.sale_price && (
-              <span className="text-lg text-muted-foreground line-through">
-                {product.price.toLocaleString('tr-TR')} ₺
-              </span>
-            )}
-          </div>
-
-          <Separator />
-
           {/* Description */}
           {product.description && (
             <p className="text-muted-foreground leading-relaxed">{product.description}</p>
           )}
 
-          {/* Stock */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`w-2 h-2 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span>{product.stock > 0 ? `Stokta var (${product.stock} adet)` : 'Stokta yok'}</span>
-          </div>
+          <Separator />
 
-          <AddToCartButton product={product} />
+          <ProductPurchasePanel product={product} />
 
           <Separator />
 

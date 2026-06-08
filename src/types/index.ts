@@ -1,3 +1,9 @@
+export interface CategoryPromoCard {
+  image_url: string | null
+  title: string
+  href: string
+}
+
 export interface Category {
   id: string
   name: string
@@ -5,6 +11,7 @@ export interface Category {
   description: string | null
   image_url: string | null
   parent_id: string | null
+  promo_cards?: CategoryPromoCard[]
   created_at: string
 }
 
@@ -23,11 +30,59 @@ export interface Product {
   is_active: boolean
   created_at: string
   updated_at: string
+  variants?: ProductVariant[]
+  components?: ProductComponent[]
+}
+
+export interface VariantTemplate {
+  id: string
+  name: string
+  options: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductVariant {
+  id: string
+  product_id: string
+  name: string
+  attributes: Record<string, string>
+  price: number | null
+  sale_price: number | null
+  stock: number
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductComponent {
+  id: string
+  product_id: string
+  name: string
+  unit_price: number
+  default_quantity: number
+  min_quantity: number
+  max_quantity: number
+  stock: number
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SelectedComponent {
+  component_id: string
+  name: string
+  quantity: number
+  unit_price: number
 }
 
 export interface CartItem {
   product: Product
   quantity: number
+  variant?: ProductVariant
+  components?: SelectedComponent[]
 }
 
 export interface Order {
@@ -47,6 +102,18 @@ export interface OrderItem {
   product?: Product
   quantity: number
   unit_price: number
+  variant_id?: string | null
+  variant_name?: string | null
+  components_config?: SelectedComponent[] | null
+}
+
+export interface HeroSlide {
+  image_url: string | null
+  title: string
+  subtitle: string
+  desc: string
+  cta_text: string
+  cta_href: string
 }
 
 export interface ShippingAddress {

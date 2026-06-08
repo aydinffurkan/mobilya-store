@@ -1,15 +1,22 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { Category } from '@/types'
 
-const categories = [
-  { name: 'Yatak Odası', slug: 'yatak-odasi', emoji: '🛏️', count: '120+ ürün' },
-  { name: 'Yemek Odası', slug: 'yemek-odasi', emoji: '🍽️', count: '80+ ürün' },
-  { name: 'Koltuk & Oturma', slug: 'koltuk-oturma', emoji: '🛋️', count: '95+ ürün' },
-  { name: 'Genç Odası', slug: 'genc-odasi', emoji: '📚', count: '60+ ürün' },
-  { name: 'TV Ünitesi', slug: 'tv-unitesi', emoji: '📺', count: '40+ ürün' },
-  { name: 'Bahçe Mobilyası', slug: 'bahce-mobilyasi', emoji: '🌿', count: '35+ ürün' },
-]
+async function getCategories(): Promise<Category[]> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase.from('categories').select('*').order('name')
+    return (data as Category[]) ?? []
+  } catch {
+    return []
+  }
+}
 
-export default function CategorySection() {
+export default async function CategorySection() {
+  const categories = await getCategories()
+
+  if (categories.length === 0) return null
+
   return (
     <section className="max-w-7xl mx-auto px-4 py-14">
       <div className="flex items-center justify-between mb-8">
@@ -28,10 +35,11 @@ export default function CategorySection() {
             href={`/kategori/${cat.slug}`}
             className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-border bg-card hover:border-[#8B6914]/40 hover:bg-secondary transition-all duration-200 hover:shadow-md"
           >
-            <span className="text-4xl group-hover:scale-110 transition-transform duration-200">{cat.emoji}</span>
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground leading-tight">{cat.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{cat.count}</p>
+              {cat.description && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{cat.description}</p>
+              )}
             </div>
           </Link>
         ))}

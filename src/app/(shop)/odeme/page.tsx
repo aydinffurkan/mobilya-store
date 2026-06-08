@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { z } from 'zod'
-import { useCartStore } from '@/store/cartStore'
+import { useCartStore, itemKey } from '@/store/cartStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
 const schema = z.object({
   full_name: z.string().min(3, 'Ad soyad en az 3 karakter olmalı'),
@@ -27,6 +29,20 @@ type FormData = z.infer<typeof schema>
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore()
   const router = useRouter()
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.push('/auth/giris?redirect=/odeme')
+      } else {
+        setUserId(data.user.id)
+      }
+      setAuthChecked(true)
+    })
+  }, [router])
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: standardSchemaResolver(schema),
@@ -34,10 +50,58 @@ export default function CheckoutPage() {
 
   const total = totalPrice()
 
+  if (!authChecked) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center text-muted-foreground">
+        Yükleniyor...
+      </div>
+    )
+  }
+
   const onSubmit = async (data: FormData) => {
-    // TODO: Save order to Supabase
-    console.log('Order:', { items, shipping: data, total })
-    await new Promise((r) => setTimeout(r, 1000))
+    const supabase = createClient()
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        shipping_address: data,
+        total,
+        status: 'pending',
+        user_id: userId,
+        created_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single()
+
+    if (orderError || !order) {
+      toast.error('Sipariş oluşturulamadı: ' + orderError?.message)
+      return
+    }
+
+    const orderItems = items.map(({ product, quantity, variant, components }) => {
+      const unitPrice = components && components.length > 0
+        ? components.reduce((sum, c) => sum + c.quantity * c.unit_price, 0)
+        : variant?.price != null
+          ? (variant.sale_price ?? variant.price)
+          : (product.sale_price ?? product.price)
+      return {
+        order_id: order.id,
+        product_id: product.id,
+        quantity,
+        unit_price: unitPrice,
+        variant_id: variant?.id ?? null,
+        variant_name: variant?.name ?? null,
+        components_config: components && components.length > 0 ? components : null,
+      }
+    })
+
+    const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+
+    if (itemsError) {
+      toast.error('Sipariş kalemleri kaydedilemedi: ' + itemsError.message)
+      return
+    }
+
     clearCart()
     toast.success('Siparişiniz alındı! En kısa sürede sizinle iletişime geçeceğiz.')
     router.push('/')
@@ -133,14 +197,23 @@ export default function CheckoutPage() {
           <div className="border border-border rounded-2xl p-5 bg-card sticky top-24 space-y-4">
             <h2 className="font-bold">Sipariş Özeti</h2>
             <div className="space-y-3 max-h-60 overflow-y-auto">
-              {items.map(({ product, quantity }) => (
-                <div key={product.id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground truncate max-w-[160px]">{product.name} × {quantity}</span>
-                  <span className="font-medium flex-shrink-0">
-                    {((product.sale_price ?? product.price) * quantity).toLocaleString('tr-TR')} ₺
-                  </span>
-                </div>
-              ))}
+              {items.map(({ product, quantity, variant, components }) => {
+                const unitPrice = components && components.length > 0
+                  ? components.reduce((sum, c) => sum + c.quantity * c.unit_price, 0)
+                  : variant?.price != null
+                    ? (variant.sale_price ?? variant.price)
+                    : (product.sale_price ?? product.price)
+                return (
+                  <div key={itemKey(product.id, variant?.id, components)} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground truncate max-w-[160px]">
+                      {product.name}{variant ? ` — ${variant.name}` : ''} × {quantity}
+                    </span>
+                    <span className="font-medium flex-shrink-0">
+                      {(unitPrice * quantity).toLocaleString('tr-TR')} ₺
+                    </span>
+                  </div>
+                )
+              })}
             </div>
             <Separator />
             <div className="flex justify-between text-sm">

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
-import { useCartStore } from '@/store/cartStore'
+import { useCartStore, itemKey } from '@/store/cartStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
@@ -34,43 +34,56 @@ export default function CartPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Items */}
         <div className="lg:col-span-2 space-y-4">
-          {items.map(({ product, quantity }) => (
-            <div key={product.id} className="flex gap-4 p-4 border border-border rounded-2xl bg-card">
-              {/* Image */}
-              <div className="w-24 h-24 rounded-xl bg-muted flex-shrink-0 relative overflow-hidden">
-                {product.images?.[0] ? (
-                  <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">🛋️</div>
-                )}
-              </div>
+          {items.map(({ product, quantity, variant, components }) => {
+            const unitPrice = components && components.length > 0
+              ? components.reduce((sum, c) => sum + c.quantity * c.unit_price, 0)
+              : variant?.price != null
+                ? (variant.sale_price ?? variant.price)
+                : (product.sale_price ?? product.price)
+            return (
+              <div key={itemKey(product.id, variant?.id, components)} className="flex gap-4 p-4 border border-border rounded-2xl bg-card">
+                {/* Image */}
+                <div className="w-24 h-24 rounded-xl bg-muted flex-shrink-0 relative overflow-hidden">
+                  {product.images?.[0] ? (
+                    <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl">🛋️</div>
+                  )}
+                </div>
 
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">{product.category?.name}</p>
-                <h3 className="font-semibold text-sm leading-snug mt-0.5 line-clamp-2">{product.name}</h3>
-                <p className="text-[#8B6914] font-bold mt-1">
-                  {((product.sale_price ?? product.price) * quantity).toLocaleString('tr-TR')} ₺
-                </p>
-              </div>
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">{product.category?.name}</p>
+                  <h3 className="font-semibold text-sm leading-snug mt-0.5 line-clamp-2">{product.name}</h3>
+                  {variant && <p className="text-xs text-muted-foreground mt-0.5">{variant.name}</p>}
+                  {components && components.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      {components.map((c) => `${c.name} × ${c.quantity}`).join(' · ')}
+                    </p>
+                  )}
+                  <p className="text-[#8B6914] font-bold mt-1">
+                    {(unitPrice * quantity).toLocaleString('tr-TR')} ₺
+                  </p>
+                </div>
 
-              {/* Quantity + Delete */}
-              <div className="flex flex-col items-end justify-between">
-                <button onClick={() => removeItem(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 size={16} />
-                </button>
-                <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                  <button className="px-2 py-1 hover:bg-secondary transition-colors" onClick={() => updateQuantity(product.id, quantity - 1)}>
-                    <Minus size={12} />
+                {/* Quantity + Delete */}
+                <div className="flex flex-col items-end justify-between">
+                  <button onClick={() => removeItem(product.id, variant?.id, components)} className="text-muted-foreground hover:text-destructive transition-colors">
+                    <Trash2 size={16} />
                   </button>
-                  <span className="px-3 py-1 text-sm font-medium">{quantity}</span>
-                  <button className="px-2 py-1 hover:bg-secondary transition-colors" onClick={() => updateQuantity(product.id, quantity + 1)}>
-                    <Plus size={12} />
-                  </button>
+                  <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                    <button className="px-2 py-1 hover:bg-secondary transition-colors" onClick={() => updateQuantity(product.id, quantity - 1, variant?.id, components)}>
+                      <Minus size={12} />
+                    </button>
+                    <span className="px-3 py-1 text-sm font-medium">{quantity}</span>
+                    <button className="px-2 py-1 hover:bg-secondary transition-colors" onClick={() => updateQuantity(product.id, quantity + 1, variant?.id, components)}>
+                      <Plus size={12} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Summary */}

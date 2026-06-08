@@ -1,4 +1,6 @@
-import HeroSection from '@/components/home/HeroSection'
+export const dynamic = 'force-dynamic'
+
+import HeroSlider from '@/components/home/HeroSlider'
 import CategorySection from '@/components/home/CategorySection'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'
@@ -6,7 +8,7 @@ import ServicesSection from '@/components/home/ServicesSection'
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
+      <HeroSlider />
       <CategorySection />
       <FeaturedProducts />
       <ServicesSection />
