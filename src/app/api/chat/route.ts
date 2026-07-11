@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/api/rate-limit'
+import { decryptSecret } from '@/lib/crypto/secrets'
 
 const SYSTEM_PROMPT = `Sen Türkiye'nin önde gelen mobilya mağazasının yapay zeka asistanısın. Müşterilere Türkçe olarak yardım ediyorsun.
 
@@ -31,7 +32,8 @@ async function getApiKey(): Promise<string | null> {
       .select('value')
       .eq('key', 'anthropic_api_key')
       .single()
-    return (data?.value as { key?: string } | null)?.key ?? null
+    const stored = (data?.value as { key?: string } | null)?.key
+    return stored ? decryptSecret(stored) : null
   } catch {
     return null
   }
