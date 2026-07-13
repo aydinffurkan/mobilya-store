@@ -16,6 +16,7 @@ export default function ProductImageGallery({ images, name }: Props) {
   const [thumbStart, setThumbStart] = useState(0)
   const [modalOpen, setModalOpen]   = useState(false)
   const mainRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef<number | null>(null)
 
   const canThumbPrev = thumbStart > 0
   const canThumbNext = thumbStart + THUMB_VISIBLE < images.length
@@ -66,6 +67,13 @@ export default function ProductImageGallery({ images, name }: Props) {
         ref={mainRef}
         className="relative w-full aspect-[4/3] overflow-hidden cursor-zoom-in group"
         onClick={() => setModalOpen(true)}
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null) return
+          const diff = touchStartX.current - e.changedTouches[0].clientX
+          if (Math.abs(diff) > 40) diff > 0 ? nextMain() : prevMain()
+          touchStartX.current = null
+        }}
       >
         <Image
           src={images[selected]}
@@ -187,6 +195,13 @@ export default function ProductImageGallery({ images, name }: Props) {
           <div
             className="relative w-full h-full max-w-5xl max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+            onTouchEnd={(e) => {
+              if (touchStartX.current === null) return
+              const diff = touchStartX.current - e.changedTouches[0].clientX
+              if (Math.abs(diff) > 40) diff > 0 ? nextMain() : prevMain()
+              touchStartX.current = null
+            }}
           >
             <Image
               src={images[selected]}
