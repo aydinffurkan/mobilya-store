@@ -25,12 +25,20 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession reads from cookie — no network request, no rate limiting
+  // Role is embedded in the JWT so it's safe to read here
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
-  if (!user && request.nextUrl.pathname.startsWith('/admin')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/giris'
-    return NextResponse.redirect(url)
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/giris'
+      return NextResponse.redirect(url)
+    }
+    if (user.app_metadata?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   return supabaseResponse

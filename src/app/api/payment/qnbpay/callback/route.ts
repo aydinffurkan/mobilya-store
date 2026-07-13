@@ -50,7 +50,7 @@ async function handleCallback(req: NextRequest) {
   // yönlendir (sahte bir başarısız callback ödenmiş siparişi düşüremesin).
   const { data: order } = await admin
     .from('orders')
-    .select('status')
+    .select('status, user_id, total')
     .eq('id', invoiceId)
     .single()
 
@@ -81,11 +81,35 @@ async function handleCallback(req: NextRequest) {
         paid_at: new Date().toISOString(),
       }).eq('id', invoiceId).eq('status', 'pending_payment')
 
+      // Hediye çekini kullanılmış işaretle
+      void admin.from('gift_vouchers')
+        .update({ status: 'used', used_at: new Date().toISOString() })
+        .eq('order_id', invoiceId)
+        .eq('status', 'active')
+
       // E-posta bildirimleri — redirect'i bloklamaz
       void Promise.all([
         sendOrderConfirmation(invoiceId),
         sendAdminNewOrderNotification(invoiceId),
       ]).catch((err) => console.error('[Email] Gönderim hatası:', err))
+
+      // MessaPuan — ödeme onaylandığında kazanım
+      if (order.user_id) {
+        void (async () => {
+          try {
+            const { getPointsConfig, awardPoints } = await import('@/lib/points')
+            const cfg = await getPointsConfig()
+            const orderPoints = cfg.order_tl_interval > 0
+              ? Math.floor((Number(order.total) / cfg.order_tl_interval) * cfg.order_points)
+              : 0
+            if (orderPoints > 0) {
+              await awardPoints(order.user_id, 'order', orderPoints, invoiceId)
+            }
+          } catch (err) {
+            console.error('[MessaPuan] Kart ödeme puanı verilemedi:', err)
+          }
+        })()
+      }
 
       return NextResponse.redirect(`${siteUrl}/odeme/basarili?order=${invoiceId}`)
     }

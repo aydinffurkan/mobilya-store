@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/auth-guard'
 
 interface SeoPayload {
   site_title: string
@@ -13,6 +14,7 @@ interface SeoPayload {
 }
 
 export async function saveSeoSettings(payload: SeoPayload) {
+  await requireAdmin()
   const adminClient = createAdminClient()
   const { error } = await adminClient
     .from('site_settings')

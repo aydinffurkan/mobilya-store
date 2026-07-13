@@ -11,7 +11,19 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data } = await supabase.auth.exchangeCodeForSession(code)
+
+    // Hoşgeldin MessaPuanı — Google OAuth + e-posta onayı akışını kapsar (idempotent)
+    if (data.session?.user?.id) {
+      const userId = data.session.user.id
+      void (async () => {
+        try {
+          const { awardPoints, getPointsConfig } = await import('@/lib/points')
+          const config = await getPointsConfig()
+          await awardPoints(userId, 'signup', config.signup_points)
+        } catch { /* puan hatası redirect'i bloklamasın */ }
+      })()
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`)

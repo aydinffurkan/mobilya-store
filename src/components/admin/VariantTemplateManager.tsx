@@ -116,7 +116,7 @@ export default function VariantTemplateManager({ templates }: Props) {
           </p>
         </div>
         {!adding && !editingId && (
-          <Button type="button" size="sm" onClick={startAdd} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white flex-shrink-0">
+          <Button type="button" size="sm" onClick={startAdd} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white flex-shrink-0">
             <Plus size={14} className="mr-1" /> Şablon Ekle
           </Button>
         )}
@@ -205,7 +205,7 @@ function TemplateForm({
   saving: boolean
 }) {
   return (
-    <div className="border border-[#8B6914]/40 rounded-xl p-4 space-y-3 bg-[#8B6914]/5">
+    <div className="border border-[#222222]/40 rounded-xl p-4 space-y-3 bg-[#222222]/5">
       <div className="space-y-1.5">
         <Label>Şablon Adı *</Label>
         <Input
@@ -236,13 +236,13 @@ function TemplateForm({
             </div>
           ))}
         </div>
-        <button type="button" onClick={addOptionRow} className="text-xs text-[#8B6914] hover:underline">
+        <button type="button" onClick={addOptionRow} className="text-xs text-[#222222] hover:underline">
           + Seçenek ekle
         </button>
       </div>
 
       <div className="flex items-center gap-2 pt-1">
-        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={onCancel} disabled={saving}>

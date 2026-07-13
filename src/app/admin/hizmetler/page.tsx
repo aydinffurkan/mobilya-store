@@ -17,7 +17,7 @@ export default async function AdminServicesPage() {
           <h1 className="text-2xl font-bold">Hizmetler</h1>
           <p className="text-muted-foreground text-sm mt-1">Ana sayfada gösterilen hizmet kartları</p>
         </div>
-        <Link href="/admin/hizmetler/yeni" className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-[#8B6914] hover:bg-[#7a5c12] text-white text-sm font-medium transition-colors">
+        <Link href="/admin/hizmetler/yeni" className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white text-sm font-medium transition-colors">
           <Plus size={16} className="mr-1" /> Yeni Hizmet
         </Link>
       </div>
@@ -26,7 +26,8 @@ export default async function AdminServicesPage() {
         {!services?.length ? (
           <div className="text-center py-16 text-muted-foreground">Henüz hizmet eklenmedi.</div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-secondary/50 border-b border-border">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">İkon</th>
@@ -51,7 +52,7 @@ export default async function AdminServicesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Link href={`/admin/hizmetler/${s.id}`} className="text-xs text-[#8B6914] hover:underline">Düzenle</Link>
+                      <Link href={`/admin/hizmetler/${s.id}`} className="text-xs text-[#222222] hover:underline">Düzenle</Link>
                       <DeleteServiceButton serviceId={s.id} serviceTitle={s.title} />
                     </div>
                   </td>
@@ -59,6 +60,7 @@ export default async function AdminServicesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

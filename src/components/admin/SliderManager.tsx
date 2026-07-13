@@ -1,17 +1,20 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
 import { saveHeroSlider } from '@/app/admin/ayarlar/actions'
 import { HeroSlide } from '@/types'
-import { ImagePlus, Pencil, Trash2, X, Loader2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
+import { Pencil, Trash2, Loader2, Plus, ArrowUp, ArrowDown } from 'lucide-react'
+import HotspotEditor from '@/components/shared/HotspotEditor'
+import ImageUploader from '@/components/shared/ImageUploader'
+import SectionVisibilityToggle from '@/components/admin/SectionVisibilityToggle'
 
 interface Props {
   slides: HeroSlide[]
+  initialVisible?: boolean
 }
 
 const emptySlide = (): HeroSlide => ({
@@ -21,16 +24,15 @@ const emptySlide = (): HeroSlide => ({
   desc: '',
   cta_text: '',
   cta_href: '',
+  hotspots: [],
 })
 
-export default function SliderManager({ slides: initialSlides }: Props) {
+export default function SliderManager({ slides: initialSlides, initialVisible = true }: Props) {
   const [slides, setSlides] = useState<HeroSlide[]>(initialSlides)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState<HeroSlide | null>(null)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const persist = async (next: HeroSlide[], successMessage: string) => {
     setSaving(true)
@@ -41,8 +43,8 @@ export default function SliderManager({ slides: initialSlides }: Props) {
       setAdding(false)
       setEditingIndex(null)
       setForm(null)
-    } catch (e: any) {
-      toast.error('Kaydedilemedi: ' + e.message)
+    } catch (e: unknown) {
+      toast.error('Kaydedilemedi: ' + (e instanceof Error ? e.message : String(e)))
     } finally {
       setSaving(false)
     }
@@ -57,7 +59,7 @@ export default function SliderManager({ slides: initialSlides }: Props) {
   const startEdit = (index: number) => {
     setAdding(false)
     setEditingIndex(index)
-    setForm({ ...slides[index] })
+    setForm({ hotspots: [], ...slides[index] })
   }
 
   const cancel = () => {
@@ -91,51 +93,27 @@ export default function SliderManager({ slides: initialSlides }: Props) {
     await persist(next, 'Sıralama güncellendi')
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !form) return
-
-    setUploading(true)
-    const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `slider-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('product-images').upload(path, file)
-    if (error) {
-      toast.error('Görsel yüklenemedi')
-    } else {
-      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path)
-      setForm({ ...form, image_url: urlData.publicUrl })
-    }
-    setUploading(false)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const removeImage = async () => {
-    if (!form?.image_url) return
-    const supabase = createClient()
-    const path = form.image_url.split('/product-images/')[1]
-    if (path) await supabase.storage.from('product-images').remove([path])
-    setForm({ ...form, image_url: null })
-  }
-
   return (
     <div className="bg-white border border-border rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-semibold">Ana Sayfa Slider</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Ziyaretçiyi anasayfada karşılayan, otomatik geçişli slayt galerisi. En az bir slayt eklemeniz önerilir.
+            Ziyaretçiyi anasayfada karşılayan, otomatik geçişli slayt galerisi. Her slayta ürün noktaları ekleyebilirsiniz.
           </p>
         </div>
-        {!adding && editingIndex === null && (
-          <Button type="button" size="sm" onClick={startAdd} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white flex-shrink-0">
-            <Plus size={14} className="mr-1" /> Slayt Ekle
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <SectionVisibilityToggle sectionKey="slider" initialVisible={initialVisible} />
+          {!adding && editingIndex === null && (
+            <Button type="button" size="sm" onClick={startAdd} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
+              <Plus size={14} className="mr-1" /> Slayt Ekle
+            </Button>
+          )}
+        </div>
       </div>
 
       {slides.length === 0 && !adding && (
-        <p className="text-sm text-muted-foreground py-2">Henüz slayt eklenmemiş — varsayılan tek slaytlı görünüm kullanılacak.</p>
+        <p className="text-sm text-muted-foreground py-2">Henüz slayt eklenmemiş.</p>
       )}
 
       <div className="space-y-2">
@@ -147,10 +125,7 @@ export default function SliderManager({ slides: initialSlides }: Props) {
                 setForm={setForm}
                 onSave={handleSave}
                 onCancel={cancel}
-                onImageUpload={handleImageUpload}
-                onImageRemove={removeImage}
-                fileInputRef={fileInputRef}
-                uploading={uploading}
+                onImageChange={(url) => setForm({ ...form, image_url: url })}
                 saving={saving}
               />
             ) : (
@@ -164,7 +139,14 @@ export default function SliderManager({ slides: initialSlides }: Props) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm truncate">{slide.title || '(Başlıksız)'}</p>
-                  <p className="text-xs text-muted-foreground truncate">{slide.subtitle}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {slide.subtitle}
+                    {(slide.hotspots?.length ?? 0) > 0 && (
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-[#222222]">
+                        <Plus size={10} />{slide.hotspots!.length} ürün noktası
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button type="button" onClick={() => move(index, -1)} disabled={index === 0 || saving} className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30">
@@ -191,10 +173,7 @@ export default function SliderManager({ slides: initialSlides }: Props) {
             setForm={setForm}
             onSave={handleSave}
             onCancel={cancel}
-            onImageUpload={handleImageUpload}
-            onImageRemove={removeImage}
-            fileInputRef={fileInputRef}
-            uploading={uploading}
+            onImageChange={(url) => setForm({ ...form, image_url: url })}
             saving={saving}
           />
         )}
@@ -208,54 +187,36 @@ function SlideForm({
   setForm,
   onSave,
   onCancel,
-  onImageUpload,
-  onImageRemove,
-  fileInputRef,
-  uploading,
+  onImageChange,
   saving,
 }: {
   form: HeroSlide
   setForm: (f: HeroSlide) => void
   onSave: () => void
   onCancel: () => void
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
-  onImageRemove: () => void
-  fileInputRef: React.RefObject<HTMLInputElement | null>
-  uploading: boolean
+  onImageChange: (url: string | null) => void
   saving: boolean
 }) {
   return (
-    <div className="border border-[#8B6914]/40 rounded-xl p-4 space-y-3 bg-[#8B6914]/5">
+    <div className="border border-[#222222]/40 rounded-xl p-4 space-y-4 bg-[#222222]/5">
       <div className="space-y-1.5">
-        <Label>Görsel</Label>
-        {form.image_url ? (
-          <div className="relative w-full h-40 rounded-lg overflow-hidden border border-border group">
-            <img src={form.image_url} alt="" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={onImageRemove}
-              className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X size={14} className="text-white" />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-full h-32 rounded-lg border-2 border-dashed border-border hover:border-[#8B6914] transition-colors flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-[#8B6914]"
-          >
-            {uploading ? <Loader2 size={22} className="animate-spin" /> : <ImagePlus size={22} />}
-            <span className="text-xs">{uploading ? 'Yükleniyor...' : 'Görsel Yükle'}</span>
-          </button>
-        )}
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onImageUpload} />
+        <div className="flex items-baseline gap-2">
+          <Label>Görsel</Label>
+          <span className="text-[11px] text-muted-foreground">Önerilen: <strong>1920 × 600 px</strong> · 16:5 oran · tam sayfa banner</span>
+        </div>
+        <ImageUploader
+          value={form.image_url}
+          onChange={onImageChange}
+          storagePrefix="slider-"
+          aspectRatio={16 / 5}
+          height={130}
+        />
       </div>
 
+      {/* Başlık / Etiket */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>Üst Etiket (Alt Başlık)</Label>
+          <Label>Üst Etiket</Label>
           <Input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="örn. Yatak Odası Koleksiyonları" />
         </div>
         <div className="space-y-1.5">
@@ -264,16 +225,18 @@ function SlideForm({
         </div>
       </div>
 
+      {/* Açıklama */}
       <div className="space-y-1.5">
         <Label>Açıklama</Label>
         <textarea
           value={form.desc}
           onChange={(e) => setForm({ ...form, desc: e.target.value })}
           rows={2}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 resize-none bg-background"
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/40 resize-none bg-background"
         />
       </div>
 
+      {/* CTA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>Buton Metni</Label>
@@ -285,8 +248,17 @@ function SlideForm({
         </div>
       </div>
 
+      {/* Ürün Noktaları */}
+      {form.image_url && (
+        <HotspotEditor
+          imageUrl={form.image_url}
+          hotspots={form.hotspots ?? []}
+          onChange={(hotspots) => setForm({ ...form, hotspots })}
+        />
+      )}
+
       <div className="flex items-center gap-2 pt-1">
-        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={onCancel} disabled={saving}>

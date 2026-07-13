@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/server";
 
-const geist = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const defaultTitle = "Mobilya Store – Kaliteli Mobilya";
+const defaultTitle = "Messa Home – Kaliteli Mobilya";
 const defaultDescription = "Türkiye'nin en güzel mobilyaları uygun fiyatlarla. Yatak odası, yemek odası, oturma grubu ve daha fazlası.";
 
 async function getSeoSettings() {
@@ -22,8 +23,18 @@ async function getSeoSettings() {
   }
 }
 
+async function getFaviconUrl(): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("site_settings").select("value").eq("key", "favicon").single();
+    return (data?.value as { url?: string } | null)?.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getSeoSettings();
+  const [seo, faviconUrl] = await Promise.all([getSeoSettings(), getFaviconUrl()]);
 
   return {
     title: seo.site_title || defaultTitle,
@@ -40,6 +51,10 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: seo.robots_index === false
       ? { index: false, follow: false }
       : { index: true, follow: true },
+    icons: {
+      icon: faviconUrl ? [{ url: faviconUrl, type: 'image/png' }] : '/icon.png',
+      apple: faviconUrl ?? '/icon.png',
+    },
   };
 }
 
@@ -49,7 +64,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={`${geist.variable} h-full antialiased`}>
+    <html lang="tr" className={`${manrope.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster position="bottom-right" />

@@ -165,7 +165,7 @@ export default function VariantManager({ productId, variants, templates }: Props
           </p>
         </div>
         {!adding && !editingId && (
-          <Button type="button" size="sm" onClick={startAdd} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+          <Button type="button" size="sm" onClick={startAdd} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
             <Plus size={14} className="mr-1" /> Varyant Ekle
           </Button>
         )}
@@ -279,7 +279,7 @@ function VariantForm({
   const pickerTemplate = templates.find((t) => t.id === pickerTemplateId) ?? null
 
   return (
-    <div className="border border-[#8B6914]/40 rounded-xl p-4 space-y-3 bg-[#8B6914]/5">
+    <div className="border border-[#222222]/40 rounded-xl p-4 space-y-3 bg-[#222222]/5">
       <div className="space-y-1.5">
         <Label>Varyant Adı *</Label>
         <Input
@@ -295,7 +295,7 @@ function VariantForm({
           <select
             value={pickerTemplateId}
             onChange={(e) => setPickerTemplateId(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 bg-background"
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/40 bg-background"
           >
             <option value="">Bir şablon seçin...</option>
             {templates.map((t) => (
@@ -309,7 +309,7 @@ function VariantForm({
                   key={option}
                   type="button"
                   onClick={() => applyTemplateOption(pickerTemplate.name, option)}
-                  className="px-2.5 py-1 rounded-md border border-border text-xs hover:border-[#8B6914] hover:text-[#8B6914] transition-colors"
+                  className="px-2.5 py-1 rounded-md border border-border text-xs hover:bg-[#C8B8A6] hover:border-[#C8B8A6] hover:text-[#222222] transition-colors"
                 >
                   {pickerTemplate.name}: {option}
                 </button>
@@ -346,7 +346,7 @@ function VariantForm({
             </div>
           ))}
         </div>
-        <button type="button" onClick={addAttrRow} className="text-xs text-[#8B6914] hover:underline">
+        <button type="button" onClick={addAttrRow} className="text-xs text-[#222222] hover:underline">
           + Öznitelik ekle
         </button>
       </div>
@@ -375,13 +375,13 @@ function VariantForm({
           type="checkbox"
           checked={form.is_active}
           onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-          className="accent-[#8B6914] w-4 h-4"
+          className="accent-[#222222] w-4 h-4"
         />
         <span className="text-sm font-medium">Aktif (sitede görünsün)</span>
       </label>
 
       <div className="flex items-center gap-2 pt-1">
-        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={onCancel} disabled={saving}>

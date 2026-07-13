@@ -130,7 +130,7 @@ export default async function AdminDashboard() {
                 <Icon size={16} className={color} />
               </div>
             </div>
-            <p className="text-3xl font-bold">{value}</p>
+            <p className="text-2xl sm:text-3xl font-bold truncate">{value}</p>
           </div>
         ))}
       </div>
@@ -144,7 +144,7 @@ export default async function AdminDashboard() {
         <h2 className="font-bold mb-4">Hızlı İşlemler</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { href: '/admin/urunler/yeni', label: '+ Ürün Ekle', color: 'bg-[#8B6914] text-white hover:bg-[#7a5c12]' },
+            { href: '/admin/urunler/yeni', label: '+ Ürün Ekle', color: 'bg-[#222222] text-white hover:bg-[#222222]' },
             { href: '/admin/kategoriler/yeni', label: '+ Kategori Ekle', color: 'bg-blue-600 text-white hover:bg-blue-700' },
             { href: '/admin/siparisler', label: 'Siparişleri Gör', color: 'bg-secondary hover:bg-secondary/80' },
             { href: '/', label: 'Siteyi Gör', color: 'bg-secondary hover:bg-secondary/80' },
@@ -165,7 +165,7 @@ export default async function AdminDashboard() {
         <div className="lg:col-span-2 bg-white border border-border rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h2 className="font-bold">Son Siparişler</h2>
-            <Link href="/admin/siparisler" className="text-xs text-[#8B6914] hover:underline font-medium">
+            <Link href="/admin/siparisler" className="text-xs text-[#222222] hover:underline font-medium">
               Tümünü Gör →
             </Link>
           </div>
@@ -184,7 +184,7 @@ export default async function AdminDashboard() {
                     <p className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString('tr-TR')}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-sm text-[#8B6914]">{Number(order.total).toLocaleString('tr-TR')} ₺</p>
+                    <p className="font-semibold text-sm text-[#222222]">{Number(order.total).toLocaleString('tr-TR')} ₺</p>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColor[order.status] ?? 'bg-gray-100 text-gray-700'}`}>
                       {statusLabel[order.status] ?? order.status}
                     </span>
@@ -226,7 +226,7 @@ export default async function AdminDashboard() {
           <div className="bg-white border border-border rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="font-bold">Son Üyeler</h2>
-              <Link href="/admin/musteriler" className="text-xs text-[#8B6914] hover:underline font-medium">
+              <Link href="/admin/musteriler" className="text-xs text-[#222222] hover:underline font-medium">
                 Tümünü Gör →
               </Link>
             </div>

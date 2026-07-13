@@ -71,13 +71,13 @@ export const useCartStore = create<CartState>()(
 
       totalPrice: () =>
         get().items.reduce((sum, i) => {
-          // Üründe özelleştirilebilir parça varsa fiyat seçili parçaların toplamından
-          // (birim fiyat × adet) gelir; yoksa ürünün/varyantın kendi fiyatı kullanılır.
-          const unitPrice = i.components && i.components.length > 0
+          const basePrice = i.components && i.components.length > 0
             ? i.components.reduce((cSum, c) => cSum + c.quantity * c.unit_price, 0)
             : i.variant?.price != null
               ? (i.variant.sale_price ?? i.variant.price)
               : (i.product.sale_price ?? i.product.price)
+          const pct = i.product.cart_discount_percent
+          const unitPrice = pct ? Math.round(basePrice * (1 - pct / 100)) : basePrice
           return sum + unitPrice * i.quantity
         }, 0),
     }),

@@ -46,7 +46,7 @@ export default function SeoSettingsForm({ seo }: Props) {
           <Input
             value={data.site_title}
             onChange={(e) => setData((p) => ({ ...p, site_title: e.target.value }))}
-            placeholder="Mobilya Store – Kaliteli Mobilya"
+            placeholder="Messa Home – Kaliteli Mobilya"
           />
           <p className="text-xs text-muted-foreground">Tarayıcı sekmesinde ve arama sonuçlarında görünen başlık.</p>
         </div>
@@ -57,7 +57,7 @@ export default function SeoSettingsForm({ seo }: Props) {
             onChange={(e) => setData((p) => ({ ...p, meta_description: e.target.value }))}
             rows={3}
             maxLength={300}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 resize-none"
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/40 resize-none"
             placeholder="Türkiye'nin en güzel mobilyaları uygun fiyatlarla..."
           />
           <p className="text-xs text-muted-foreground">{data.meta_description.length}/300 karakter — arama sonuçlarında başlığın altında görünür.</p>
@@ -107,7 +107,7 @@ export default function SeoSettingsForm({ seo }: Props) {
             type="checkbox"
             checked={data.robots_index}
             onChange={(e) => setData((p) => ({ ...p, robots_index: e.target.checked }))}
-            className="accent-[#8B6914] w-4 h-4"
+            className="accent-[#222222] w-4 h-4"
           />
           <span className="text-sm font-medium">Arama motorlarının siteyi indekslemesine izin ver</span>
         </label>
@@ -118,7 +118,7 @@ export default function SeoSettingsForm({ seo }: Props) {
         )}
       </div>
 
-      <Button onClick={handleSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+      <Button onClick={handleSave} disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
         {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
       </Button>
     </div>

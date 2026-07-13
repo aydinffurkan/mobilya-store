@@ -6,7 +6,7 @@ import { getQNBPaySettings, getToken, buildPaymentForm, CartItemPayload } from '
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { shippingData, cardData, cartItems, total, installment } = body as {
+    const { shippingData, cardData, cartItems, total, installment, voucherCode } = body as {
       shippingData: {
         full_name: string
         email: string
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       cartItems: CartItemPayload[]
       total: number
       installment: number
+      voucherCode?: string | null
     }
 
     const supabase = await createClient()
@@ -100,6 +101,24 @@ export async function POST(req: NextRequest) {
     verifiedTotal = Math.round(verifiedTotal * 100) / 100
     // --- End price verification ---
 
+    // Hediye çeki doğrulama
+    let validatedVoucherId: string | null = null
+    if (voucherCode) {
+      const now = new Date().toISOString()
+      const { data: v, error: vErr } = await admin
+        .from('gift_vouchers')
+        .select('id, amount, status, expires_at, user_id')
+        .eq('code', voucherCode.trim().toUpperCase())
+        .single()
+      if (vErr || !v) return NextResponse.json({ error: 'Hediye çeki bulunamadı' }, { status: 400 })
+      if (v.user_id !== user.id) return NextResponse.json({ error: 'Bu hediye çeki size ait değil' }, { status: 400 })
+      if (v.status !== 'active') return NextResponse.json({ error: 'Hediye çeki zaten kullanılmış' }, { status: 400 })
+      if (v.expires_at < now) return NextResponse.json({ error: 'Hediye çekinin süresi dolmuş' }, { status: 400 })
+      const discount = Math.min(Math.round(Number(v.amount) * 100) / 100, verifiedTotal)
+      verifiedTotal = Math.max(0, Math.round((verifiedTotal - discount) * 100) / 100)
+      validatedVoucherId = v.id as string
+    }
+
     // Create order before redirecting to QNBPay
     const { data: order, error: orderError } = await admin
       .from('orders')
@@ -131,6 +150,14 @@ export async function POST(req: NextRequest) {
     if (itemsError) {
       await admin.from('orders').delete().eq('id', order.id)
       return NextResponse.json({ error: 'Sipariş kalemleri kaydedilemedi' }, { status: 500 })
+    }
+
+    // Hediye çekini bu sipariş ile ilişkilendir (ödeme onayında 'used' yapılacak)
+    if (validatedVoucherId) {
+      void admin.from('gift_vouchers')
+        .update({ order_id: order.id })
+        .eq('id', validatedVoucherId)
+        .eq('status', 'active')
     }
 
     // Get QNBPay token (Bearer auth for all APIs except paySmart3D itself)

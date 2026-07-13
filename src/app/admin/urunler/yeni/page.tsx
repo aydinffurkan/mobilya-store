@@ -1,19 +1,37 @@
 import ProductForm from '@/components/admin/ProductForm'
-import { createClient } from '@/lib/supabase/server'
-import { Category } from '@/types'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { Category, Supplier, DimensionTemplate, SpecTemplate, FAQTemplate } from '@/types'
 
-async function getCategories(): Promise<Category[]> {
+async function getData() {
   try {
-    const supabase = await createClient()
-    const { data } = await supabase.from('categories').select('*').order('name')
-    return (data as Category[]) ?? []
+    const adminClient = createAdminClient()
+    const [
+      { data: categories },
+      { data: suppliers },
+      { data: dimensionTemplates },
+      { data: specTemplates },
+      { data: faqTemplates },
+    ] = await Promise.all([
+      adminClient.from('categories').select('*').order('name'),
+      adminClient.from('suppliers').select('*').order('name'),
+      adminClient.from('dimension_templates').select('*').order('name'),
+      adminClient.from('spec_templates').select('*').order('name'),
+      adminClient.from('faq_templates').select('*').order('name'),
+    ])
+    return {
+      categories:         (categories         as Category[]         ) ?? [],
+      suppliers:          (suppliers          as Supplier[]         ) ?? [],
+      dimensionTemplates: (dimensionTemplates as DimensionTemplate[] ) ?? [],
+      specTemplates:      (specTemplates      as SpecTemplate[]      ) ?? [],
+      faqTemplates:       (faqTemplates       as FAQTemplate[]       ) ?? [],
+    }
   } catch {
-    return []
+    return { categories: [], suppliers: [], dimensionTemplates: [], specTemplates: [], faqTemplates: [] }
   }
 }
 
 export default async function NewProductPage() {
-  const categories = await getCategories()
+  const { categories, suppliers, dimensionTemplates, specTemplates, faqTemplates } = await getData()
 
   return (
     <div>
@@ -21,7 +39,13 @@ export default async function NewProductPage() {
         <h1 className="text-2xl font-bold">Yeni Ürün Ekle</h1>
         <p className="text-muted-foreground text-sm mt-1">Mağazanıza yeni bir ürün ekleyin</p>
       </div>
-      <ProductForm categories={categories} />
+      <ProductForm
+        categories={categories}
+        suppliers={suppliers}
+        dimensionTemplates={dimensionTemplates}
+        specTemplates={specTemplates}
+        faqTemplates={faqTemplates}
+      />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/auth-guard'
 
 interface VariantTemplatePayload {
   name: string
@@ -9,6 +10,7 @@ interface VariantTemplatePayload {
 }
 
 export async function saveVariantTemplate(templateId: string | null, payload: VariantTemplatePayload) {
+  await requireAdmin()
   const adminClient = createAdminClient()
 
   if (templateId) {
@@ -29,6 +31,7 @@ export async function saveVariantTemplate(templateId: string | null, payload: Va
 }
 
 export async function deleteVariantTemplate(templateId: string) {
+  await requireAdmin()
   const adminClient = createAdminClient()
   const { error } = await adminClient.from('variant_templates').delete().eq('id', templateId)
   if (error) throw new Error(error.message)

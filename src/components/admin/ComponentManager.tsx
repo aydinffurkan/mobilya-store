@@ -2,17 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { saveComponent, deleteComponent } from '@/app/admin/urunler/actions'
-import { ProductComponent } from '@/types'
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { saveComponent, deleteComponent, applyComponentTemplate } from '@/app/admin/urunler/actions'
+import { ProductComponent, ComponentTemplate } from '@/types'
+import { Plus, Pencil, Trash2, Loader2, Wand2, ImagePlus, X as XIcon } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   productId: string
   components: ProductComponent[]
+  templates?: ComponentTemplate[]
 }
 
 interface FormState {
@@ -24,6 +27,7 @@ interface FormState {
   stock: string
   sort_order: string
   is_active: boolean
+  image_url: string
 }
 
 const emptyForm = (sortOrder: number): FormState => ({
@@ -35,6 +39,7 @@ const emptyForm = (sortOrder: number): FormState => ({
   stock: '0',
   sort_order: String(sortOrder),
   is_active: true,
+  image_url: '',
 })
 
 const toFormState = (c: ProductComponent): FormState => ({
@@ -46,15 +51,37 @@ const toFormState = (c: ProductComponent): FormState => ({
   stock: String(c.stock),
   sort_order: String(c.sort_order),
   is_active: c.is_active,
+  image_url: c.image_url ?? '',
 })
 
-export default function ComponentManager({ productId, components }: Props) {
+export default function ComponentManager({ productId, components, templates = [] }: Props) {
   const router = useRouter()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState<FormState | null>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [pickerTemplateId, setPickerTemplateId] = useState('')
+  const [applyingTemplate, setApplyingTemplate] = useState(false)
+
+  const handleApplyTemplate = async () => {
+    if (!pickerTemplateId) return
+    const template = templates.find((t) => t.id === pickerTemplateId)
+    if (!template) return
+    if (!confirm(`"${template.name}" şablonundaki ${template.items.length} parça bu ürüne eklenecek. Devam edilsin mi?`)) return
+
+    setApplyingTemplate(true)
+    try {
+      await applyComponentTemplate(productId, pickerTemplateId, components.length)
+      toast.success('Şablon uygulandı, parçalar eklendi')
+      setPickerTemplateId('')
+      router.refresh()
+    } catch (e: any) {
+      toast.error('Şablon uygulanamadı: ' + e.message)
+    } finally {
+      setApplyingTemplate(false)
+    }
+  }
 
   const startAdd = () => {
     setEditingId(null)
@@ -104,6 +131,7 @@ export default function ComponentManager({ productId, components }: Props) {
         stock: Number(form.stock) || 0,
         sort_order: Number(form.sort_order) || 0,
         is_active: form.is_active,
+        image_url: form.image_url || null,
       })
       toast.success(editingId ? 'Parça güncellendi' : 'Parça eklendi')
       cancel()
@@ -139,11 +167,40 @@ export default function ComponentManager({ productId, components }: Props) {
           </p>
         </div>
         {!adding && !editingId && (
-          <Button type="button" size="sm" onClick={startAdd} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white flex-shrink-0">
+          <Button type="button" size="sm" onClick={startAdd} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white flex-shrink-0">
             <Plus size={14} className="mr-1" /> Parça Ekle
           </Button>
         )}
       </div>
+
+      {templates.length > 0 && !adding && !editingId && (
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl border border-dashed border-[#222222]/40 bg-[#222222]/5">
+          <Wand2 size={16} className="text-[#222222] flex-shrink-0" />
+          <select
+            value={pickerTemplateId}
+            onChange={(e) => setPickerTemplateId(e.target.value)}
+            className="flex-1 h-9 rounded-lg border border-border bg-white px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/40"
+          >
+            <option value="">Bir parça şablonu seçin...</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.items.length} parça)
+              </option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleApplyTemplate}
+            disabled={!pickerTemplateId || applyingTemplate}
+            className="flex-shrink-0 border-[#222222] text-[#222222] hover:bg-[#222222] hover:text-white"
+          >
+            {applyingTemplate ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : null}
+            Uygula
+          </Button>
+        </div>
+      )}
 
       {components.length === 0 && !adding && (
         <p className="text-sm text-muted-foreground py-3">Henüz parça eklenmemiş. Bu alan, çok parçalı ürünler (yatak odası takımı vb.) için isteğe bağlıdır.</p>
@@ -156,19 +213,30 @@ export default function ComponentManager({ productId, components }: Props) {
               <ComponentForm form={form} setForm={setForm} onSave={handleSave} onCancel={cancel} saving={saving} />
             ) : (
               <div className="flex items-center justify-between gap-3 border border-border rounded-xl px-4 py-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm">{component.name}</span>
-                    {!component.is_active && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Pasif</span>
-                    )}
+                <div className="flex items-center gap-3 min-w-0">
+                  {component.image_url ? (
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative border border-border">
+                      <Image src={component.image_url} alt={component.name} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center border border-border border-dashed">
+                      <ImagePlus size={14} className="text-muted-foreground/40" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{component.name}</span>
+                      {!component.is_active && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Pasif</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Birim fiyat: {component.unit_price.toLocaleString('tr-TR')} ₺
+                      {' · '}{component.default_quantity > 0 ? 'Varsayılan: dahil (1 adet)' : 'Varsayılan: dahil değil (opsiyonel)'}
+                      {' · '}Aralık: {component.min_quantity}-{component.max_quantity}
+                      {' · '}Stok: {component.stock}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Birim fiyat: {component.unit_price.toLocaleString('tr-TR')} ₺
-                    {' · '}{component.default_quantity > 0 ? 'Varsayılan: dahil (1 adet)' : 'Varsayılan: dahil değil (opsiyonel)'}
-                    {' · '}Aralık: {component.min_quantity}-{component.max_quantity}
-                    {' · '}Stok: {component.stock}
-                  </p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
@@ -213,8 +281,71 @@ function ComponentForm({
   onCancel: () => void
   saving: boolean
 }) {
+  const [uploading, setUploading] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const path = `component-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { data, error } = await supabase.storage.from('product-images').upload(path, file)
+      if (error) throw error
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path)
+      setForm({ ...form, image_url: urlData.publicUrl })
+    } catch (e: any) {
+      toast.error('Görsel yüklenemedi: ' + e.message)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleImageRemove = async () => {
+    if (!form.image_url) return
+    try {
+      const supabase = createClient()
+      const path = form.image_url.split('/product-images/')[1]?.split('?')[0]
+      if (path) await supabase.storage.from('product-images').remove([path])
+    } catch {}
+    setForm({ ...form, image_url: '' })
+  }
+
   return (
-    <div className="border border-[#8B6914]/40 rounded-xl p-4 space-y-3 bg-[#8B6914]/5">
+    <div className="border border-[#222222]/40 rounded-xl p-4 space-y-3 bg-[#222222]/5">
+      {/* Görsel */}
+      <div className="space-y-1.5">
+        <Label>Parça Görseli</Label>
+        {form.image_url ? (
+          <div className="flex items-center gap-3">
+            <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border bg-muted flex-shrink-0">
+              <Image src={form.image_url} alt="" fill className="object-cover" />
+            </div>
+            <button
+              type="button"
+              onClick={handleImageRemove}
+              className="flex items-center gap-1.5 text-xs text-destructive hover:underline"
+            >
+              <XIcon size={12} /> Görseli Kaldır
+            </button>
+          </div>
+        ) : (
+          <label className={`inline-flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-border rounded-lg hover:bg-muted/50 transition-colors ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} className="text-muted-foreground" />}
+            <span className="text-xs text-muted-foreground">{uploading ? 'Yükleniyor...' : 'Görsel Seç'}</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+              disabled={uploading}
+            />
+          </label>
+        )}
+      </div>
+
       <div className="space-y-1.5">
         <Label>Parça Adı *</Label>
         <Input
@@ -257,7 +388,7 @@ function ComponentForm({
             type="checkbox"
             checked={form.included_by_default}
             onChange={(e) => setForm({ ...form, included_by_default: e.target.checked })}
-            className="accent-[#8B6914] w-4 h-4"
+            className="accent-[#222222] w-4 h-4"
           />
           <span className="text-sm font-medium">Varsayılan olarak dahil (1 adet ile gelsin)</span>
         </label>
@@ -266,14 +397,14 @@ function ComponentForm({
             type="checkbox"
             checked={form.is_active}
             onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            className="accent-[#8B6914] w-4 h-4"
+            className="accent-[#222222] w-4 h-4"
           />
           <span className="text-sm font-medium">Aktif (sitede görünsün)</span>
         </label>
       </div>
 
       <div className="flex items-center gap-2 pt-1">
-        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+        <Button type="button" size="sm" onClick={onSave} disabled={saving || uploading} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={onCancel} disabled={saving}>

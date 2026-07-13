@@ -3,73 +3,148 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [showPw,   setShowPw]   = useState(false)
+  const [loading,  setLoading]  = useState(false)
   const router = useRouter()
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleRegister = async () => {
     if (password.length < 6) { toast.error('Şifre en az 6 karakter olmalı'); return }
-
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     })
     setLoading(false)
-
     if (error) {
       toast.error('Kayıt başarısız: ' + error.message)
     } else {
-      await supabase.from('profiles').update({ full_name: fullName }).eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
+      if (data.user) {
+        await supabase.from('profiles').update({ full_name: fullName }).eq('id', data.user.id)
+      }
+      if (data.session?.access_token) {
+        void fetch('/api/points/award-signup', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+        }).catch(() => {})
+      }
       toast.success('Kayıt başarılı! Hoş geldiniz.')
       router.push('/')
     }
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white border border-border rounded-2xl p-8 shadow-sm">
-        <div className="text-center mb-6">
-          <Link href="/" className="text-xl font-bold text-[#8B6914]">
-            MOBİLYA<span className="text-foreground">STORE</span>
+    <div className="flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[460px]">
+
+        {/* Tabs */}
+        <div className="flex border-b border-neutral-200 mb-8">
+          <Link href="/auth/giris" className="flex-1 pb-3 text-[15px] font-medium text-neutral-400 hover:text-neutral-600 transition-colors text-center">
+            Giriş Yap
           </Link>
-          <p className="text-muted-foreground text-sm mt-2">Yeni hesap oluşturun</p>
+          <button className="relative flex-1 pb-3 text-[15px] font-semibold text-neutral-900">
+            Ben Yeniyim!
+            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-neutral-900" />
+          </button>
         </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName">Ad Soyad</Label>
-            <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Adınız Soyadınız" required />
+        {/* Google */}
+        <GoogleSignInButton label="Google ile üye ol" />
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-neutral-200" />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">E-posta</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ornek@mail.com" required />
+          <div className="relative flex justify-center">
+            <span className="bg-[#FAF8F4] px-4 text-[12px] text-neutral-400">veya e-posta ile devam et</span>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Şifre</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="En az 6 karakter" required />
+        </div>
+
+        {/* Form */}
+        <form onSubmit={(e) => { e.preventDefault(); void handleRegister() }} className="space-y-4">
+
+          {/* Full name */}
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+              <User size={16} />
+            </div>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Ad Soyad"
+              required
+              autoFocus
+              className="w-full h-[52px] pl-11 pr-4 bg-neutral-100 rounded-xl text-[14px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/20 focus:bg-white transition-all"
+            />
           </div>
-          <Button type="submit" disabled={loading} className="w-full bg-[#8B6914] hover:bg-[#7a5c12] text-white font-semibold">
-            {loading ? 'Kayıt olunuyor...' : 'Kayıt Ol'}
-          </Button>
+
+          {/* Email */}
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+              <Mail size={16} />
+            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="E-Posta"
+              required
+              className="w-full h-[52px] pl-11 pr-4 bg-neutral-100 rounded-xl text-[14px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/20 focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+              <Lock size={16} />
+            </div>
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Şifre (en az 6 karakter)"
+              required
+              className="w-full h-[52px] pl-11 pr-12 bg-neutral-100 rounded-xl text-[14px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/20 focus:bg-white transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors"
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-[52px] bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-[14px] tracking-wide uppercase rounded-xl transition-colors disabled:opacity-60"
+          >
+            {loading ? 'Kayıt Olunuyor...' : 'Üye Ol'}
+          </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Zaten hesabınız var mı?{' '}
-          <Link href="/auth/giris" className="text-[#8B6914] hover:underline font-medium">Giriş Yap</Link>
+        <p className="text-[12px] text-neutral-400 text-center mt-5 leading-relaxed">
+          Kayıt olarak{' '}
+          <Link href="/gizlilik" className="underline hover:text-neutral-700">Gizlilik Politikası</Link>
+          {' '}ve{' '}
+          <Link href="/kullanim-sartlari" className="underline hover:text-neutral-700">Kullanım Şartları</Link>
+          {"'nı"} kabul etmiş olursunuz.
         </p>
+
       </div>
     </div>
   )

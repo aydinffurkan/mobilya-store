@@ -44,7 +44,7 @@ export default async function AdminCategoriesPage() {
           <h1 className="text-2xl font-bold">Kategoriler</h1>
           <p className="text-muted-foreground text-sm mt-1">{categories.length} kategori</p>
         </div>
-        <Link href="/admin/kategoriler/yeni" className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-[#8B6914] hover:bg-[#7a5c12] text-white text-sm font-medium transition-colors">
+        <Link href="/admin/kategoriler/yeni" className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white text-sm font-medium transition-colors">
           <Plus size={16} className="mr-1" /> Yeni Kategori
         </Link>
       </div>
@@ -53,12 +53,13 @@ export default async function AdminCategoriesPage() {
         {categories.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <p>Henüz kategori eklenmedi.</p>
-            <Link href="/admin/kategoriler/yeni" className="text-[#8B6914] hover:underline text-sm mt-2 block">
+            <Link href="/admin/kategoriler/yeni" className="text-[#222222] hover:underline text-sm mt-2 block">
               İlk kategoriyi ekle →
             </Link>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[540px]">
             <thead className="bg-secondary/50 border-b border-border">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Kategori Adı</th>
@@ -92,6 +93,7 @@ export default async function AdminCategoriesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

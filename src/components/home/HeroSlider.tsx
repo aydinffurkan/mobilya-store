@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { HeroSlide } from '@/types'
 import HeroSliderClient from './HeroSliderClient'
+import { getSectionVisible } from '@/lib/repositories/settings'
 
 const defaultSlides: HeroSlide[] = [
   {
@@ -25,6 +26,7 @@ async function getSlides(): Promise<HeroSlide[]> {
 }
 
 export default async function HeroSlider() {
-  const slides = await getSlides()
+  const [slides, visible] = await Promise.all([getSlides(), getSectionVisible('slider')])
+  if (!visible) return null
   return <HeroSliderClient slides={slides} />
 }

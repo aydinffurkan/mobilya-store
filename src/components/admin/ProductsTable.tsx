@@ -2,17 +2,20 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Product } from '@/types'
+import { Product, Supplier } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Search, Pencil, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Pencil, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import DeleteProductButton from '@/components/admin/DeleteProductButton'
+import DuplicateProductButton from '@/components/admin/DuplicateProductButton'
 import { bulkDeleteProducts, bulkSetProductsActive } from '@/app/admin/urunler/actions'
 import { toast } from 'sonner'
+import BulkOperationModal from '@/components/admin/BulkOperationModal'
 
 interface Props {
   products: Product[]
+  suppliers?: Supplier[]
 }
 
 type SortKey = 'name' | 'category' | 'price' | 'stock' | 'status'
@@ -20,15 +23,17 @@ type SortDir = 'asc' | 'desc'
 
 const PAGE_SIZE = 10
 
-export default function ProductsTable({ products }: Props) {
+export default function ProductsTable({ products, suppliers = [] }: Props) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
+  const [supplier, setSupplier] = useState('all')
   const [status, setStatus] = useState('all')
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
 
   const categories = useMemo(() => {
     const map = new Map<string, string>()
@@ -42,13 +47,17 @@ export default function ProductsTable({ products }: Props) {
     return products.filter((p: any) => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.slug.toLowerCase().includes(search.toLowerCase())
       const matchesCategory = category === 'all' || p.category?.name === category
+      const matchesSupplier =
+        supplier === 'all' ? true :
+        supplier === 'none' ? !p.supplier_id :
+        p.supplier_id === supplier
       const matchesStatus =
         status === 'all' ||
         (status === 'active' && p.is_active) ||
         (status === 'passive' && !p.is_active)
-      return matchesSearch && matchesCategory && matchesStatus
+      return matchesSearch && matchesCategory && matchesSupplier && matchesStatus
     })
-  }, [products, search, category, status])
+  }, [products, search, category, supplier, status])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
@@ -155,7 +164,7 @@ export default function ProductsTable({ products }: Props) {
         <select
           value={category}
           onChange={(e) => { setCategory(e.target.value); resetToFirstPage() }}
-          className="h-9 px-3 border border-border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40"
+          className="h-9 px-3 border border-border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#222222]/40"
         >
           <option value="all">Tüm Kategoriler</option>
           {categories.map((c) => (
@@ -165,15 +174,28 @@ export default function ProductsTable({ products }: Props) {
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); resetToFirstPage() }}
-          className="h-9 px-3 border border-border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40"
+          className="h-9 px-3 border border-border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#222222]/40"
         >
           <option value="all">Tüm Durumlar</option>
           <option value="active">Aktif</option>
           <option value="passive">Pasif</option>
         </select>
-        {(search || category !== 'all' || status !== 'all') && (
+        {suppliers.length > 0 && (
+          <select
+            value={supplier}
+            onChange={(e) => { setSupplier(e.target.value); resetToFirstPage() }}
+            className="h-9 px-3 border border-border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#222222]/40"
+          >
+            <option value="all">Tüm Tedarikçiler</option>
+            <option value="none">Tedarikçisiz</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        )}
+        {(search || category !== 'all' || supplier !== 'all' || status !== 'all') && (
           <button
-            onClick={() => { setSearch(''); setCategory('all'); setStatus('all'); resetToFirstPage() }}
+            onClick={() => { setSearch(''); setCategory('all'); setSupplier('all'); setStatus('all'); resetToFirstPage() }}
             className="text-xs text-muted-foreground hover:text-foreground underline"
           >
             Filtreleri temizle
@@ -183,9 +205,18 @@ export default function ProductsTable({ products }: Props) {
       </div>
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 mb-4 bg-[#8B6914]/10 border border-[#8B6914]/30 rounded-xl px-4 py-2.5">
-          <span className="text-sm font-medium text-[#8B6914]">{selected.size} ürün seçildi</span>
-          <div className="flex items-center gap-2 ml-auto">
+        <div className="flex flex-wrap items-center gap-2 mb-4 bg-[#222222]/10 border border-[#222222]/30 rounded-xl px-4 py-2.5">
+          <span className="text-sm font-semibold text-[#222222]">{selected.size} ürün seçildi</span>
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <Button
+              size="sm"
+              disabled={bulkBusy}
+              onClick={() => setBulkModalOpen(true)}
+              className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white gap-1.5"
+            >
+              <SlidersHorizontal size={13} />
+              Toplu İşlem
+            </Button>
             <Button size="sm" variant="outline" disabled={bulkBusy} onClick={() => handleBulkSetActive(true)}>Aktif Yap</Button>
             <Button size="sm" variant="outline" disabled={bulkBusy} onClick={() => handleBulkSetActive(false)}>Pasif Yap</Button>
             <Button size="sm" variant="outline" disabled={bulkBusy} className="text-destructive hover:text-destructive" onClick={handleBulkDelete}>Sil</Button>
@@ -194,11 +225,20 @@ export default function ProductsTable({ products }: Props) {
         </div>
       )}
 
+      {bulkModalOpen && (
+        <BulkOperationModal
+          selectedIds={Array.from(selected)}
+          suppliers={suppliers}
+          onClose={() => setBulkModalOpen(false)}
+          onDone={() => { setBulkModalOpen(false); clearSelection() }}
+        />
+      )}
+
       <div className="bg-white border border-border rounded-2xl overflow-hidden">
         {products.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <p>Henüz ürün eklenmedi.</p>
-            <Link href="/admin/urunler/yeni" className="text-[#8B6914] hover:underline text-sm mt-2 block">
+            <Link href="/admin/urunler/yeni" className="text-[#222222] hover:underline text-sm mt-2 block">
               İlk ürünü ekle →
             </Link>
           </div>
@@ -217,7 +257,7 @@ export default function ProductsTable({ products }: Props) {
                       type="checkbox"
                       checked={allOnPageSelected}
                       onChange={toggleSelectAll}
-                      className="accent-[#8B6914] w-4 h-4 cursor-pointer"
+                      className="accent-[#222222] w-4 h-4 cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-4 py-3 font-medium">
@@ -230,6 +270,9 @@ export default function ProductsTable({ products }: Props) {
                       Kategori <SortIcon active={sortKey === 'category'} dir={sortDir} />
                     </button>
                   </th>
+                  {suppliers.length > 0 && (
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tedarikçi</th>
+                  )}
                   <th className="text-left px-4 py-3 font-medium">
                     <button onClick={() => toggleSort('price')} className="flex items-center gap-1.5 hover:text-foreground">
                       Fiyat <SortIcon active={sortKey === 'price'} dir={sortDir} />
@@ -250,13 +293,13 @@ export default function ProductsTable({ products }: Props) {
               </thead>
               <tbody className="divide-y divide-border">
                 {paged.map((p: any) => (
-                  <tr key={p.id} className={`hover:bg-secondary/20 transition-colors ${selected.has(p.id) ? 'bg-[#8B6914]/5' : ''}`}>
+                  <tr key={p.id} className={`hover:bg-secondary/20 transition-colors ${selected.has(p.id) ? 'bg-[#222222]/5' : ''}`}>
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
                         checked={selected.has(p.id)}
                         onChange={() => toggleSelectOne(p.id)}
-                        className="accent-[#8B6914] w-4 h-4 cursor-pointer"
+                        className="accent-[#222222] w-4 h-4 cursor-pointer"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -266,9 +309,20 @@ export default function ProductsTable({ products }: Props) {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.category?.name ?? '—'}</td>
+                    {suppliers.length > 0 && (
+                      <td className="px-4 py-3">
+                        {p.supplier_id ? (
+                          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 rounded-full px-2 py-0.5">
+                            {suppliers.find((s) => s.id === p.supplier_id)?.name ?? '—'}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-semibold text-[#8B6914]">{p.price.toLocaleString('tr-TR')} ₺</p>
+                        <p className="font-semibold text-[#222222]">{p.price.toLocaleString('tr-TR')} ₺</p>
                         {p.sale_price && (
                           <p className="text-xs text-muted-foreground line-through">{p.sale_price.toLocaleString('tr-TR')} ₺</p>
                         )}
@@ -281,12 +335,13 @@ export default function ProductsTable({ products }: Props) {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         <Link href={`/admin/urunler/${p.id}`}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil size={14} />
                           </Button>
                         </Link>
+                        <DuplicateProductButton productId={p.id} productName={p.name} />
                         <DeleteProductButton productId={p.id} productName={p.name} />
                       </div>
                     </td>

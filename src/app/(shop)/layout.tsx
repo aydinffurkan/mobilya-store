@@ -1,15 +1,17 @@
-import Header, { NavCategory } from '@/components/layout/Header'
+import HeaderMegaMenu, { MegaMenuCategory } from '@/components/HeaderMegaMenu'
+type NavCategory = MegaMenuCategory
+import TopBar from '@/components/layout/TopBar'
 import Footer from '@/components/layout/Footer'
+import CookieBanner from '@/components/layout/CookieBanner'
+import AnalyticsScripts from '@/components/layout/AnalyticsScripts'
+import CartPreviewPopup from '@/components/shared/CartPreviewPopup'
+import QuickViewModal from '@/components/products/QuickViewModal'
+import ChatWidget from '@/components/layout/ChatWidget'
+import WhatsAppWidget from '@/components/layout/WhatsAppWidget'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Category, CategoryPromoCard } from '@/types'
-
-async function getContact() {
-  try {
-    const supabase = await createClient()
-    const { data } = await supabase.from('site_settings').select('value').eq('key', 'contact').single()
-    return data?.value ?? {}
-  } catch { return {} }
-}
+import { getLogoSettings, getAnalyticsSettings, getSectionVisible } from '@/lib/repositories/settings'
 
 async function getNavCategories(): Promise<NavCategory[]> {
   try {
@@ -30,13 +32,45 @@ async function getNavCategories(): Promise<NavCategory[]> {
   }
 }
 
+async function getWhatsAppSettings() {
+  try {
+    const supabase = createAdminClient()
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'whatsapp')
+      .single()
+    const val = data?.value as { enabled?: boolean; phone?: string; message?: string } | null
+    return { enabled: val?.enabled ?? false, phone: val?.phone ?? '', message: val?.message ?? '' }
+  } catch {
+    return { enabled: false, phone: '', message: '' }
+  }
+}
+
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
-  const [contact, categories] = await Promise.all([getContact(), getNavCategories()])
+  const [categories, logo, analytics, chatbotEnabled, whatsapp] = await Promise.all([
+    getNavCategories(),
+    getLogoSettings(),
+    getAnalyticsSettings(),
+    getSectionVisible('chatbot', false),
+    getWhatsAppSettings(),
+  ])
   return (
     <>
-      <Header phone={contact.phone ?? '444 21 05'} categories={categories} />
+      <div className="sticky top-0 z-50">
+        <TopBar />
+        <HeaderMegaMenu categories={categories} logoUrl={logo?.image_url} logoAlt={logo?.alt} />
+      </div>
       <main className="flex-1">{children}</main>
       <Footer />
+      <CartPreviewPopup />
+      <QuickViewModal />
+      <CookieBanner />
+      <AnalyticsScripts gaId={analytics.ga_id} fbPixelId={analytics.fb_pixel_id} />
+      {whatsapp.enabled && whatsapp.phone && (
+        <WhatsAppWidget phone={whatsapp.phone} message={whatsapp.message || undefined} />
+      )}
+      <ChatWidget enabled={chatbotEnabled} />
     </>
   )
 }

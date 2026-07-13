@@ -25,12 +25,12 @@ export default function TopProductsChart({ products }: { products: TopProduct[] 
                   {p.name}
                 </p>
                 <p className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                  {p.quantity} adet · <span className="font-semibold text-[#8B6914]">{p.revenue.toLocaleString('tr-TR')} ₺</span>
+                  {p.quantity} adet · <span className="font-semibold text-[#222222]">{p.revenue.toLocaleString('tr-TR')} ₺</span>
                 </p>
               </div>
               <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#8B6914] rounded-full"
+                  className="h-full bg-[#222222] rounded-full"
                   style={{ width: `${Math.max(4, (p.quantity / max) * 100)}%` }}
                 />
               </div>

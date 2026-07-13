@@ -27,7 +27,7 @@ export default async function HeroSection() {
   return (
     <section className="relative">
       <div className="bg-gradient-to-r from-amber-950 to-amber-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-20 md:py-32 grid md:grid-cols-2 gap-8 items-center">
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <p className="text-amber-300 text-sm font-semibold uppercase tracking-widest">{hero.subtitle}</p>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">{hero.title}</h1>

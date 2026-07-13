@@ -57,20 +57,20 @@ export default function ServiceForm({ service }: { service?: Service }) {
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 resize-none"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/40 resize-none"
               required
             />
           </div>
           <div className="col-span-2">
             <label className="flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="accent-[#8B6914] w-4 h-4" />
+              <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="accent-[#222222] w-4 h-4" />
               <span className="text-sm font-medium">Aktif (sitede görünsün)</span>
             </label>
           </div>
         </div>
       </div>
       <div className="flex gap-2 mt-4">
-        <Button type="submit" disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+        <Button type="submit" disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
           {saving ? 'Kaydediliyor...' : isEdit ? 'Güncelle' : 'Hizmet Ekle'}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>İptal</Button>

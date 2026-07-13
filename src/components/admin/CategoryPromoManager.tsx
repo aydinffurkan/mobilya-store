@@ -126,7 +126,7 @@ export default function CategoryPromoManager({ categoryId, cards: initialCards }
           </p>
         </div>
         {!adding && editingIndex === null && (
-          <Button type="button" size="sm" onClick={startAdd} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white flex-shrink-0">
+          <Button type="button" size="sm" onClick={startAdd} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white flex-shrink-0">
             <Plus size={14} className="mr-1" /> Kart Ekle
           </Button>
         )}
@@ -223,7 +223,7 @@ function PromoCardForm({
   saving: boolean
 }) {
   return (
-    <div className="border border-[#8B6914]/40 rounded-xl p-4 space-y-3 bg-[#8B6914]/5">
+    <div className="border border-[#222222]/40 rounded-xl p-4 space-y-3 bg-[#222222]/5">
       <div className="flex items-start gap-4">
         <div className="space-y-1.5 flex-shrink-0">
           <Label>Görsel</Label>
@@ -243,12 +243,15 @@ function PromoCardForm({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-20 h-20 rounded-full border-2 border-dashed border-border hover:border-[#8B6914] transition-colors flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-[#8B6914]"
+              className="w-20 h-20 rounded-full border-2 border-dashed border-border hover:border-[#222222] transition-colors flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-[#222222]"
             >
               {uploading ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
             </button>
           )}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onImageUpload} />
+          <p className="text-[10px] text-muted-foreground leading-snug w-20 text-center">
+            1200×900 px<br />4:3 oran
+          </p>
         </div>
 
         <div className="flex-1 space-y-3">
@@ -264,7 +267,7 @@ function PromoCardForm({
       </div>
 
       <div className="flex items-center gap-2 pt-1">
-        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+        <Button type="button" size="sm" onClick={onSave} disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={onCancel} disabled={saving}>

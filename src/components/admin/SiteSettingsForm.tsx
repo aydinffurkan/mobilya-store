@@ -62,7 +62,7 @@ export default function SiteSettingsForm({ hero, contact }: Props) {
               value={heroData.desc}
               onChange={e => setHeroData(p => ({ ...p, desc: e.target.value }))}
               rows={3}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 resize-none"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/40 resize-none"
             />
           </div>
           <div className="space-y-1.5">
@@ -107,7 +107,7 @@ export default function SiteSettingsForm({ hero, contact }: Props) {
         </div>
       </div>
 
-      <Button onClick={handleSave} disabled={saving} className="bg-[#8B6914] hover:bg-[#7a5c12] text-white">
+      <Button onClick={handleSave} disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">
         {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
       </Button>
     </div>

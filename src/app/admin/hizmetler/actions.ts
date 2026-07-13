@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/auth-guard'
 
 interface ServicePayload {
   icon: string
@@ -12,6 +13,7 @@ interface ServicePayload {
 }
 
 export async function saveService(serviceId: string | null, payload: ServicePayload) {
+  await requireAdmin()
   const adminClient = createAdminClient()
 
   if (serviceId) {
@@ -27,6 +29,7 @@ export async function saveService(serviceId: string | null, payload: ServicePayl
 }
 
 export async function deleteService(serviceId: string) {
+  await requireAdmin()
   const adminClient = createAdminClient()
   const { error } = await adminClient.from('services').delete().eq('id', serviceId)
   if (error) throw new Error(error.message)

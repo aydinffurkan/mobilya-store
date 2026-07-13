@@ -5,19 +5,25 @@ import { updateOrderStatus } from '@/app/admin/siparisler/actions'
 import { toast } from 'sonner'
 
 const statuses = [
-  { value: 'pending', label: 'Beklemede' },
-  { value: 'confirmed', label: 'Onaylandı' },
-  { value: 'shipped', label: 'Kargoda' },
-  { value: 'delivered', label: 'Teslim Edildi' },
-  { value: 'cancelled', label: 'İptal' },
+  { value: 'pending',          label: 'Beklemede'         },
+  { value: 'pending_payment',  label: 'Ödeme Bekleniyor'  },
+  { value: 'pending_transfer', label: 'Havale Bekleniyor' },
+  { value: 'confirmed',        label: 'Onaylandı'         },
+  { value: 'shipped',          label: 'Kargoda'           },
+  { value: 'delivered',        label: 'Teslim Edildi'     },
+  { value: 'cancelled',        label: 'İptal'             },
+  { value: 'payment_failed',   label: 'Ödeme Başarısız'   },
 ]
 
 const statusColor: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  confirmed: 'bg-blue-100 text-blue-700 border-blue-200',
-  shipped: 'bg-purple-100 text-purple-700 border-purple-200',
-  delivered: 'bg-green-100 text-green-700 border-green-200',
-  cancelled: 'bg-red-100 text-red-700 border-red-200',
+  pending:          'bg-amber-100 text-amber-700 border-amber-200',
+  pending_payment:  'bg-orange-100 text-orange-700 border-orange-200',
+  pending_transfer: 'bg-violet-100 text-violet-700 border-violet-200',
+  confirmed:        'bg-blue-100 text-blue-700 border-blue-200',
+  shipped:          'bg-purple-100 text-purple-700 border-purple-200',
+  delivered:        'bg-green-100 text-green-700 border-green-200',
+  cancelled:        'bg-red-100 text-red-700 border-red-200',
+  payment_failed:   'bg-red-100 text-red-700 border-red-200',
 }
 
 export default function OrderStatusSelect({ orderId, initialStatus }: { orderId: string; initialStatus: string }) {
