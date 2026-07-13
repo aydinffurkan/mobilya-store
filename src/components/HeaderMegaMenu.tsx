@@ -275,9 +275,9 @@ export default function HeaderMegaMenu({
 
       {/* ═══════════════ ROW 1 ═══════════════ */}
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[84px]">
+        <div className="flex items-center h-[56px] md:h-[84px] relative">
 
-          {/* LEFT — hamburger (mobile) + logo */}
+          {/* LEFT — hamburger (mobile) + logo (desktop) */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <button
               type="button"
@@ -285,33 +285,23 @@ export default function HeaderMegaMenu({
               className="md:hidden p-1 text-neutral-700"
               aria-label="Menü"
             >
-              <Menu size={22} strokeWidth={1.7} />
+              <Menu size={24} strokeWidth={1.7} />
             </button>
-
-            <Link href="/">{logo}</Link>
+            <Link href="/" className="hidden md:block">{logo}</Link>
           </div>
 
-          {/* CENTER — search */}
+          {/* MOBILE — logo ortada */}
+          <Link href="/" className="md:hidden absolute left-1/2 -translate-x-1/2">{logo}</Link>
+
+          {/* CENTER — search (desktop) */}
           <div className="flex-1 flex justify-center px-6">
             <div className="hidden md:block w-full max-w-[520px]">
               <SearchBar borderless />
             </div>
           </div>
 
-          {/* RIGHT — user / favorites / cart + mobile search */}
-          <div className="flex items-center gap-4 flex-shrink-0 justify-end">
-
-            {/* Arama ikonu — sadece mobil */}
-            <button
-              type="button"
-              onClick={() => setSearchOpen((v) => !v)}
-              className="md:hidden p-1 text-neutral-500"
-              aria-label="Ara"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-            </button>
+          {/* RIGHT — user / favorites / cart */}
+          <div className="flex items-center gap-4 flex-shrink-0 justify-end ml-auto">
 
             {/* User */}
             <div className="relative hidden md:flex" ref={userMenuRef}>
@@ -380,7 +370,7 @@ export default function HeaderMegaMenu({
             {/* Favorites */}
             <Link href="/favorilerim" className="flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 transition-colors" aria-label="Favorilerim">
               <div className="relative">
-                <Heart size={20} strokeWidth={1.6} />
+                <Heart size={22} strokeWidth={1.6} className="md:w-5 md:h-5" />
                 {mounted && totalFavorites > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-[15px] h-[15px] rounded-full flex items-center justify-center font-semibold">
                     {totalFavorites}
@@ -393,7 +383,7 @@ export default function HeaderMegaMenu({
             {/* Cart */}
             <Link href="/sepet" className="flex items-center gap-1.5 text-neutral-700 hover:text-neutral-900 transition-colors" aria-label="Sepetim">
               <div className="relative">
-                <ShoppingCart size={20} strokeWidth={1.6} />
+                <ShoppingCart size={22} strokeWidth={1.6} className="md:w-5 md:h-5" />
                 {mounted && totalItems > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] w-[15px] h-[15px] rounded-full flex items-center justify-center font-semibold">
                     {totalItems}
@@ -406,12 +396,10 @@ export default function HeaderMegaMenu({
         </div>
       </div>
 
-      {/* Mobile search bar */}
-      {searchOpen && (
-        <div className="md:hidden px-4 py-3 border-t border-neutral-100 bg-white">
-          <SearchBar mobile onClose={() => setSearchOpen(false)} />
-        </div>
-      )}
+      {/* Mobile search bar — her zaman görünür */}
+      <div className="md:hidden px-4 py-2.5 border-t border-neutral-100 bg-white">
+        <SearchBar mobile />
+      </div>
 
       {/* ═══════════════ ROW 2 — Desktop Nav ═══════════════ */}
       {navCategories.length > 0 && (
