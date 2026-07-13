@@ -290,8 +290,8 @@ export default function HeaderMegaMenu({
             <Link href="/" className="hidden md:block">{logo}</Link>
           </div>
 
-          {/* MOBILE — logo ortada */}
-          <Link href="/" className="md:hidden absolute left-1/2 -translate-x-1/2">{logo}</Link>
+          {/* MOBILE — logo sola yakın */}
+          <Link href="/" className="md:hidden absolute left-[42%] -translate-x-1/2">{logo}</Link>
 
           {/* CENTER — search (desktop) */}
           <div className="flex-1 flex justify-center px-6">
@@ -366,6 +366,19 @@ export default function HeaderMegaMenu({
                 </div>
               )}
             </div>
+
+            {/* User — sadece mobil */}
+            {mounted && (
+              <Link
+                href={user ? '/hesabim' : '/auth/giris'}
+                className="md:hidden p-1 text-neutral-600"
+                aria-label={user ? 'Hesabım' : 'Giriş Yap'}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
+              </Link>
+            )}
 
             {/* Favorites */}
             <Link href="/favorilerim" className="flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 transition-colors" aria-label="Favorilerim">

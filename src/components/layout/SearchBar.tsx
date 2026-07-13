@@ -112,15 +112,20 @@ export default function SearchBar({ mobile = false, borderless = false, onClose 
     return () => { cancelled = true }
   }, [debouncedQuery])
 
-  // Dışarı tıklama
+  // Dışarı tıklama (mouse + touch)
   useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const h = (e: MouseEvent | TouchEvent) => {
+      const target = 'touches' in e ? e.touches[0]?.target : (e as MouseEvent).target
+      if (containerRef.current && !containerRef.current.contains(target as Node)) {
         setOpen(false); setFocused(false)
       }
     }
     document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
+    document.addEventListener('touchstart', h as EventListener)
+    return () => {
+      document.removeEventListener('mousedown', h)
+      document.removeEventListener('touchstart', h as EventListener)
+    }
   }, [])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
