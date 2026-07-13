@@ -185,8 +185,9 @@ export default function ProductImageGallery({ images, name }: Props) {
           onClick={() => setModalOpen(false)}
         >
           <button
-            className="absolute top-5 right-5 text-white/70 hover:text-white p-2 bg-neutral-900/50 rounded-full transition-colors"
-            onClick={() => setModalOpen(false)}
+            className="absolute top-5 right-5 text-white/70 hover:text-white p-2 bg-neutral-900/50 rounded-full transition-colors z-10"
+            onClick={(e) => { e.stopPropagation(); setModalOpen(false) }}
+            onTouchEnd={(e) => { e.stopPropagation(); setModalOpen(false) }}
             aria-label="Kapat"
           >
             <X className="w-5 h-5 stroke-[1.5]" />
