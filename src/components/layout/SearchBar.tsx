@@ -88,7 +88,7 @@ export default function SearchBar({ mobile = false, borderless = false, onClose 
   const debouncedQuery = useDebounce(query, 260)
   const placeholder    = useTypewriter(!focused && query === '')
   const showDefault    = !mobile && focused && query.length === 0
-  const showResults    = !mobile && open && query.length >= 2
+  const showResults    = open && query.length >= 2
 
   // Popüler ürünleri bir kez yükle
   useEffect(() => {
