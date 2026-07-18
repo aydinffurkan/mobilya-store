@@ -17,14 +17,17 @@ function LoginForm() {
   const searchParams = useSearchParams()
 
   const handleLogin = async () => {
+    if (loading) return
     setLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) {
-      toast.error('E-posta veya şifre hatalı')
-    } else {
-      // Hoşgeldin MessaPuanı — idempotent, zaten verilmişse tekrar eklemez
+    try {
+      const supabase = createClient()
+      // Geçersiz eski oturumu temizle
+      await supabase.auth.signOut()
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        toast.error('E-posta veya şifre hatalı')
+        return
+      }
       if (data.session?.access_token) {
         void fetch('/api/points/award-signup', {
           method: 'POST',
@@ -36,6 +39,8 @@ function LoginForm() {
       if (redirect) router.push(redirect)
       else if (data.user?.app_metadata?.role === 'admin') router.push('/admin')
       else router.push('/')
+    } finally {
+      setLoading(false)
     }
   }
 
