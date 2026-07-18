@@ -49,7 +49,7 @@ export default function HeroSliderClient({ slides }: Props) {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-r from-amber-950 to-amber-800 text-white">
-      <div className="relative aspect-[4/3] sm:aspect-[16/7] md:h-[360px] lg:h-auto lg:aspect-[16/5]">
+      <div className="relative aspect-[16/9] sm:aspect-[16/7] md:h-[360px] lg:h-auto lg:aspect-[16/5]">
         <div
           className="flex h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
@@ -60,7 +60,7 @@ export default function HeroSliderClient({ slides }: Props) {
                 src={slide.image_url}
                 alt={slide.title}
                 fill
-                className="object-contain md:object-cover pointer-events-none select-none"
+                className="object-cover pointer-events-none select-none"
                 sizes="100vw"
                 priority={i === 0}
                 draggable={false}
