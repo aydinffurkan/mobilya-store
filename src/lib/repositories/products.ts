@@ -11,6 +11,7 @@ export interface ProductFilters {
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'featured'
   featured?: boolean
   cartDiscount?: number
+  supplierId?: string
   limit?: number
   offset?: number
 }
@@ -82,7 +83,7 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
 export async function getProductsPage(filters: ProductFilters = {}): Promise<ProductsPage> {
   try {
     const supabase = await createClient()
-    const { q, categoryIds, minPrice, maxPrice, sort = 'newest', featured, cartDiscount, limit = 24, offset = 0 } = filters
+    const { q, categoryIds, minPrice, maxPrice, sort = 'newest', featured, cartDiscount, supplierId, limit = 24, offset = 0 } = filters
 
     let query = supabase
       .from('products')
@@ -95,6 +96,7 @@ export async function getProductsPage(filters: ProductFilters = {}): Promise<Pro
     if (maxPrice !== undefined) query = query.lte('price', maxPrice)
     if (featured) query = query.eq('is_featured', true)
     if (cartDiscount !== undefined) query = query.eq('cart_discount_percent', cartDiscount)
+    if (supplierId) query = query.eq('supplier_id', supplierId)
 
     if (sort === 'price_asc') query = query.order('price', { ascending: true })
     else if (sort === 'price_desc') query = query.order('price', { ascending: false })

@@ -31,6 +31,7 @@ interface ProductGridProps {
   initialFilters: GridFilters
   filterCategories?: Pick<Category, 'id' | 'name' | 'slug'>[]
   lockedCategory?: string
+  lockedSupplier?: string
   basePath: string
 }
 
@@ -40,6 +41,7 @@ export default function ProductGrid({
   initialFilters,
   filterCategories,
   lockedCategory,
+  lockedSupplier,
   basePath,
 }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
@@ -72,6 +74,7 @@ export default function ProductGrid({
     if (f.min) p.set('min', f.min)
     if (f.max) p.set('max', f.max)
     if (f.sort) p.set('sort', f.sort)
+    if (lockedSupplier) p.set('supplier', lockedSupplier)
     p.set('limit', String(PAGE_SIZE))
     p.set('offset', String(off))
     return `/api/products?${p}`
@@ -84,6 +87,7 @@ export default function ProductGrid({
     if (f.min) p.set('min', f.min)
     if (f.max) p.set('max', f.max)
     if (f.sort && f.sort !== 'newest') p.set('sort', f.sort)
+    if (lockedSupplier) p.set('supplier', lockedSupplier)
     const qs = p.toString()
     window.history.replaceState({}, '', qs ? `${basePath}?${qs}` : basePath)
   }

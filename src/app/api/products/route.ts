@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
   const maxPrice = sp.get('max') ? Number(sp.get('max')) : undefined
   const sort = (sp.get('sort') ?? 'newest') as ProductFilters['sort']
   const featured = sp.get('featured') === 'true' ? true : undefined
+  const supplierId = sp.get('supplier') || undefined
   const limit = parseIntParam(sp.get('limit'), 24)
   const offset = parseIntParam(sp.get('offset'), 0)
 
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
     maxPrice,
     sort,
     featured,
+    supplierId,
     limit,
     offset,
   })

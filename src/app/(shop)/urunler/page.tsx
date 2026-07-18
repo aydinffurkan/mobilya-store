@@ -11,6 +11,7 @@ interface SearchParams {
   max?: string
   sort?: string
   sepette_indirim?: string
+  supplier?: string
 }
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -21,6 +22,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const maxPrice = params.max ? Number(params.max) : undefined
   const sort = (params.sort ?? 'newest') as ProductFilters['sort']
   const cartDiscount = params.sepette_indirim ? Number(params.sepette_indirim) : undefined
+  const supplierId = params.supplier || undefined
 
   const [categories, categoryIds] = await Promise.all([
     getTopLevelCategories(),
@@ -34,6 +36,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     maxPrice,
     sort,
     cartDiscount,
+    supplierId,
     limit: 20,
     offset: 0,
   })
@@ -71,6 +74,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           sort: sort ?? 'newest',
         }}
         filterCategories={categories}
+        lockedSupplier={supplierId}
         basePath="/urunler"
       />
     </div>
