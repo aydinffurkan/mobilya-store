@@ -48,7 +48,7 @@ export default function HeroSliderClient({ slides }: Props) {
   const hotspots = slides[index]?.hotspots ?? []
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-amber-950 to-amber-800 text-white">
+    <section className="relative overflow-hidden bg-neutral-900 text-white">
       <div className="relative aspect-[16/9] sm:aspect-[16/7] md:h-[360px] lg:h-auto lg:aspect-[16/5]">
         <div
           className="flex h-full transition-transform duration-700 ease-in-out"
