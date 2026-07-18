@@ -90,7 +90,18 @@ export async function getProductsPage(filters: ProductFilters = {}): Promise<Pro
       .select(PRODUCT_SELECT, { count: 'exact' })
       .eq('is_active', true)
 
-    if (q) query = query.ilike('name', `%${q}%`)
+    if (q) {
+      const { data: matchingSuppliers } = await supabase
+        .from('suppliers')
+        .select('id')
+        .ilike('name', `%${q}%`)
+      const supplierIds = matchingSuppliers?.map((s: { id: string }) => s.id) ?? []
+      if (supplierIds.length > 0) {
+        query = query.or(`name.ilike.%${q}%,supplier_id.in.(${supplierIds.join(',')})`)
+      } else {
+        query = query.ilike('name', `%${q}%`)
+      }
+    }
     if (categoryIds?.length) query = query.in('category_id', categoryIds)
     if (minPrice !== undefined) query = query.gte('price', minPrice)
     if (maxPrice !== undefined) query = query.lte('price', maxPrice)
