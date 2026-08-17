@@ -12,9 +12,9 @@
 type LoaderArgs = { src: string; width: number; quality?: number }
 
 export default function weservLoader({ src, width, quality }: LoaderArgs): string {
-  // Geliştirmede weserv localhost'a erişemez; Next'in yerel optimizeri
-  // kotasız çalışır, kaynağı olduğu gibi bırak.
-  if (process.env.NODE_ENV === 'development') return src
+  // Tüm görsel kaynaklarımız uzak public URL (Supabase Storage, picsum);
+  // weserv bunları dev dahil her ortamda işleyebilir. Böylece dev ve prod
+  // aynı davranır ve Next'in "loader width'i kullanmıyor" uyarısı oluşmaz.
 
   // weserv https kaynakları için "ssl:" öneki ister (protokol atılır).
   const stripped = src.replace(/^https:\/\//, 'ssl:').replace(/^http:\/\//, '')
