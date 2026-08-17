@@ -36,7 +36,9 @@ export default function ContactForm() {
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
-        toast.error(data?.error ?? 'Mesaj gönderilemedi')
+        // API hata biçimi: { error: { code, message } } — mesajı (string) al,
+        // nesnenin kendisini toast'a verme (React "object as child" hatası çöküşe yol açar).
+        toast.error(data?.error?.message ?? 'Mesaj gönderilemedi')
         return
       }
       toast.success('Mesajınız alındı, en kısa sürede dönüş yapacağız.')
