@@ -108,17 +108,20 @@ function CheckoutInner() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) {
+    // getSession() yerel oturumu okur; getUser() her seferinde Auth
+    // sunucusuna gider ve rate limit'e takılır. Veri erişimi zaten RLS ile korunuyor.
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user
+      if (!user) {
         router.push('/auth/giris?redirect=/odeme')
         setAuthChecked(true)
         return
       }
-      const uid = data.user.id
+      const uid = user.id
       setUserId(uid)
       setAuthChecked(true)
 
-      if (data.user.email) setValue('email', data.user.email)
+      if (user.email) setValue('email', user.email)
 
       const { data: addrs } = await supabase
         .from('user_addresses')

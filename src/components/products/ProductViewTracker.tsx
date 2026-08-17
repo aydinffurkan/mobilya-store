@@ -27,10 +27,13 @@ export default function ProductViewTracker({ productId }: { productId: string })
 
     // Also record in Supabase for logged-in users
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return
+    // getSession() yereldeki oturumu okur; getUser() her çağrıda
+    // Auth sunucusuna gider ve rate limit'e takılır.
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user
+      if (!user) return
       await supabase.from('product_views').insert({
-        user_id: data.user.id,
+        user_id: user.id,
         product_id: productId,
         viewed_at: new Date().toISOString(),
       })

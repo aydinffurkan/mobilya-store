@@ -21,8 +21,8 @@ function LoginForm() {
     setLoading(true)
     try {
       const supabase = createClient()
-      // Geçersiz eski oturumu temizle
-      await supabase.auth.signOut()
+      // signInWithPassword eski oturumun üzerine yazar; ayrıca signOut()
+      // çağırmak her denemede fazladan bir auth isteği demek (rate limit).
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {
         toast.error('E-posta veya şifre hatalı')

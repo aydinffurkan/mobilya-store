@@ -2,6 +2,7 @@ import HeaderMegaMenu, { MegaMenuCategory } from '@/components/HeaderMegaMenu'
 import TopBar from '@/components/layout/TopBar'
 import Footer from '@/components/layout/Footer'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/auth-guard'
 import { getLogoSettings } from '@/lib/repositories/settings'
 import { redirect } from 'next/navigation'
 import { Category, CategoryPromoCard } from '@/types'
@@ -26,9 +27,8 @@ async function getNavCategories(): Promise<MegaMenuCategory[]> {
 }
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getUser()
-  if (!data.user) redirect('/auth/giris?redirect=/hesabim')
+  const user = await getCurrentUser()
+  if (!user) redirect('/auth/giris?redirect=/hesabim')
 
   const [categories, logo] = await Promise.all([getNavCategories(), getLogoSettings()])
   return (

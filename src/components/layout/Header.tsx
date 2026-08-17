@@ -41,7 +41,8 @@ export default function Header({ categories = [], logo }: HeaderProps) {
   useEffect(() => {
     setMounted(true)
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null))
+    // onAuthStateChange INITIAL_SESSION ile mevcut oturumu hemen verir —
+    // getUser() gibi her mount'ta Auth sunucusuna istek atmaz (rate limit).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null)
     })
