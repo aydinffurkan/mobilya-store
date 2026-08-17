@@ -1,7 +1,20 @@
 import { Resend } from 'resend'
 import { createAdminClient } from './supabase/admin'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init: RESEND_API_KEY yoksa Resend constructor'ı hata fırlatır.
+// Modül seviyesinde kurmak, key eksik ortamlarda (ör. Vercel preview) route'un
+// import anında çökmesine yol açardı ("This page couldn't load"). Bunun yerine
+// gönderim anında kurup temiz hata veriyoruz (çağıranlar try/catch ile yakalar).
+let _resend: Resend | null = null
+function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('E-posta servisi yapılandırılmamış (RESEND_API_KEY eksik)')
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return _resend
+}
 
 const FROM        = process.env.RESEND_FROM_EMAIL  ?? 'noreply@example.com'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL        ?? ''
@@ -349,7 +362,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
   const email = (order.shipping_address as Record<string, string>)?.email
   if (!email) return
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [email],
     subject: `Siparişiniz Alındı — #${(orderId).slice(0, 8).toUpperCase()}`,
@@ -363,7 +376,7 @@ export async function sendStatusUpdate(orderId: string, status: string): Promise
   const email = (order.shipping_address as Record<string, string>)?.email
   if (!email) return
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [email],
     subject: `Sipariş Durumu: ${STATUS_LABEL[status] ?? status} — #${(orderId).slice(0, 8).toUpperCase()}`,
@@ -376,7 +389,7 @@ export async function sendAdminNewOrderNotification(orderId: string): Promise<vo
   const order = await getOrder(orderId)
   if (!order) return
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [ADMIN_EMAIL],
     subject: `🆕 Yeni Sipariş — #${(orderId).slice(0, 8).toUpperCase()} — ${Number(order.total).toLocaleString('tr-TR')} ₺`,
@@ -392,7 +405,7 @@ export async function sendTicketStatusUpdate(
   const shortId     = ticket.id.slice(0, 8).toUpperCase()
   const statusLabel = TICKET_STATUS_LABEL[ticket.status] ?? ticket.status
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [userEmail],
     subject: `Destek Talebi Güncellendi — #${shortId} — ${statusLabel}`,
@@ -449,7 +462,7 @@ function contactMessageHtml(msg: ContactMessage): string {
 export async function sendContactMessage(msg: ContactMessage): Promise<void> {
   if (!ADMIN_EMAIL) throw new Error('Alıcı e-posta adresi yapılandırılmamış')
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [ADMIN_EMAIL],
     replyTo: msg.email,
