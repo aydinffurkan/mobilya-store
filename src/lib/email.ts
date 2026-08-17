@@ -399,3 +399,61 @@ export async function sendTicketStatusUpdate(
     html: ticketStatusHtml(ticket, userEmail),
   })
 }
+
+// ─── İletişim formu ──────────────────────────────────────────────────────────
+
+export interface ContactMessage {
+  name: string
+  email: string
+  phone?: string
+  subject: string
+  message: string
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function contactMessageHtml(msg: ContactMessage): string {
+  const row = (label: string, value: string) => `
+    <p style="margin:0 0 4px;font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px">${label}</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#444444">${value}</p>`
+
+  const body = `
+    <p style="margin:0 0 24px;font-size:15px;color:#333333">Web sitesi iletişim formundan yeni bir mesaj alındı.</p>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f9f8f6;border-radius:12px;padding:20px;margin-bottom:24px">
+      <tr>
+        <td>
+          ${row('Ad Soyad', escapeHtml(msg.name))}
+          ${row('E-posta', escapeHtml(msg.email))}
+          ${msg.phone ? row('Telefon', escapeHtml(msg.phone)) : ''}
+          ${row('Konu', escapeHtml(msg.subject))}
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#333333;text-transform:uppercase;letter-spacing:1px">Mesaj</p>
+    <p style="margin:0;font-size:14px;color:#444444;line-height:1.7;white-space:pre-wrap">${escapeHtml(msg.message)}</p>
+  `
+
+  return baseLayout(`İletişim Formu — ${escapeHtml(msg.subject)}`, body)
+}
+
+/** İletişim formu mesajını admin adresine iletir; yanıtla dendiğinde
+ *  doğrudan gönderene döner (replyTo). */
+export async function sendContactMessage(msg: ContactMessage): Promise<void> {
+  if (!ADMIN_EMAIL) throw new Error('Alıcı e-posta adresi yapılandırılmamış')
+
+  await resend.emails.send({
+    from: `${SITE_NAME} <${FROM}>`,
+    to: [ADMIN_EMAIL],
+    replyTo: msg.email,
+    subject: `İletişim Formu — ${msg.subject}`,
+    html: contactMessageHtml(msg),
+  })
+}

@@ -187,3 +187,34 @@ export async function getDesignConsultation(): Promise<DesignConsultationData | 
     return null
   }
 }
+
+export interface ContactSettings {
+  phone: string
+  email: string
+  address: string
+}
+
+/** İletişim bilgileri (telefon/e-posta/adres). Footer ve İletişim sayfası ortak kullanır. */
+export async function getContactSettings(): Promise<ContactSettings> {
+  const FALLBACK: ContactSettings = {
+    phone: '444 21 05',
+    email: 'info@mobilyastore.com',
+    address: 'İstanbul, Türkiye',
+  }
+  try {
+    const supabase = createAdminClient()
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'contact')
+      .single()
+    const val = data?.value as Partial<ContactSettings> | null
+    return {
+      phone:   val?.phone   || FALLBACK.phone,
+      email:   val?.email   || FALLBACK.email,
+      address: val?.address || FALLBACK.address,
+    }
+  } catch {
+    return FALLBACK
+  }
+}
