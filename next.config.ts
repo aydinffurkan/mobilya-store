@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    // Vercel Image Optimization kotası (402) yerine ücretsiz weserv CDN.
+    // remotePatterns custom loader ile yok sayılır ama izin verilen kaynakları
+    // belgelemek için tutuyoruz.
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
+    qualities: [75, 95],
     remotePatterns: [
       { protocol: 'https', hostname: 'jdslkatkywtdbaqoaotm.supabase.co' },
       { protocol: 'https', hostname: 'picsum.photos' },
