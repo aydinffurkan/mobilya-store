@@ -1,12 +1,11 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/auth-guard'
 import { getProductReviews, getUserReviewForProduct } from '@/lib/repositories/reviews'
 import StarRating from '@/components/products/StarRating'
 import ReviewForm from '@/components/products/ReviewForm'
 
 export default async function ProductReviews({ productId }: { productId: string }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   const [{ reviews, stats }, existingReview] = await Promise.all([
     getProductReviews(productId),

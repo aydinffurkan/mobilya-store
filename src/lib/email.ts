@@ -1,7 +1,20 @@
 import { Resend } from 'resend'
 import { createAdminClient } from './supabase/admin'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init: RESEND_API_KEY yoksa Resend constructor'ı hata fırlatır.
+// Modül seviyesinde kurmak, key eksik ortamlarda (ör. Vercel preview) route'un
+// import anında çökmesine yol açardı ("This page couldn't load"). Bunun yerine
+// gönderim anında kurup temiz hata veriyoruz (çağıranlar try/catch ile yakalar).
+let _resend: Resend | null = null
+function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('E-posta servisi yapılandırılmamış (RESEND_API_KEY eksik)')
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return _resend
+}
 
 const FROM        = process.env.RESEND_FROM_EMAIL  ?? 'noreply@example.com'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL        ?? ''
@@ -349,7 +362,7 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
   const email = (order.shipping_address as Record<string, string>)?.email
   if (!email) return
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [email],
     subject: `Siparişiniz Alındı — #${(orderId).slice(0, 8).toUpperCase()}`,
@@ -363,7 +376,7 @@ export async function sendStatusUpdate(orderId: string, status: string): Promise
   const email = (order.shipping_address as Record<string, string>)?.email
   if (!email) return
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [email],
     subject: `Sipariş Durumu: ${STATUS_LABEL[status] ?? status} — #${(orderId).slice(0, 8).toUpperCase()}`,
@@ -376,7 +389,7 @@ export async function sendAdminNewOrderNotification(orderId: string): Promise<vo
   const order = await getOrder(orderId)
   if (!order) return
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [ADMIN_EMAIL],
     subject: `🆕 Yeni Sipariş — #${(orderId).slice(0, 8).toUpperCase()} — ${Number(order.total).toLocaleString('tr-TR')} ₺`,
@@ -392,10 +405,68 @@ export async function sendTicketStatusUpdate(
   const shortId     = ticket.id.slice(0, 8).toUpperCase()
   const statusLabel = TICKET_STATUS_LABEL[ticket.status] ?? ticket.status
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `${SITE_NAME} <${FROM}>`,
     to: [userEmail],
     subject: `Destek Talebi Güncellendi — #${shortId} — ${statusLabel}`,
     html: ticketStatusHtml(ticket, userEmail),
+  })
+}
+
+// ─── İletişim formu ──────────────────────────────────────────────────────────
+
+export interface ContactMessage {
+  name: string
+  email: string
+  phone?: string
+  subject: string
+  message: string
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function contactMessageHtml(msg: ContactMessage): string {
+  const row = (label: string, value: string) => `
+    <p style="margin:0 0 4px;font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px">${label}</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#444444">${value}</p>`
+
+  const body = `
+    <p style="margin:0 0 24px;font-size:15px;color:#333333">Web sitesi iletişim formundan yeni bir mesaj alındı.</p>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f9f8f6;border-radius:12px;padding:20px;margin-bottom:24px">
+      <tr>
+        <td>
+          ${row('Ad Soyad', escapeHtml(msg.name))}
+          ${row('E-posta', escapeHtml(msg.email))}
+          ${msg.phone ? row('Telefon', escapeHtml(msg.phone)) : ''}
+          ${row('Konu', escapeHtml(msg.subject))}
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#333333;text-transform:uppercase;letter-spacing:1px">Mesaj</p>
+    <p style="margin:0;font-size:14px;color:#444444;line-height:1.7;white-space:pre-wrap">${escapeHtml(msg.message)}</p>
+  `
+
+  return baseLayout(`İletişim Formu — ${escapeHtml(msg.subject)}`, body)
+}
+
+/** İletişim formu mesajını admin adresine iletir; yanıtla dendiğinde
+ *  doğrudan gönderene döner (replyTo). */
+export async function sendContactMessage(msg: ContactMessage): Promise<void> {
+  if (!ADMIN_EMAIL) throw new Error('Alıcı e-posta adresi yapılandırılmamış')
+
+  await getResend().emails.send({
+    from: `${SITE_NAME} <${FROM}>`,
+    to: [ADMIN_EMAIL],
+    replyTo: msg.email,
+    subject: `İletişim Formu — ${msg.subject}`,
+    html: contactMessageHtml(msg),
   })
 }

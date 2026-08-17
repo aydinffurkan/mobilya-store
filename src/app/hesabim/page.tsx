@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/auth-guard'
 import { redirect } from 'next/navigation'
 import HesabimClient from '@/components/account/HesabimClient'
 import { getAddresses } from '@/lib/actions/account'
@@ -6,7 +7,7 @@ import { getMyTickets } from '@/lib/actions/support'
 
 export default async function AccountPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/auth/giris')
 
   const [{ data: profile }, { data: orders }, addresses, tickets] = await Promise.all([
