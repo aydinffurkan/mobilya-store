@@ -16,7 +16,12 @@ interface Post {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+  // timeZone sabitlenmeli: aksi halde sunucu (Vercel/UTC) ile tarayıcı (TR/UTC+3)
+  // gün sınırına yakın tarihlerde farklı gün üretip hydration uyuşmazlığına
+  // (React #418) yol açıyor. Istanbul'a sabitleyince iki taraf da aynı çıktıyı verir.
+  return new Date(dateStr).toLocaleDateString('tr-TR', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul',
+  })
 }
 
 export default function BlogCarousel({ posts }: { posts: Post[] }) {
