@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfile, saveAddress, deleteAddress } from '@/lib/actions/account'
 import { getProductsByIds } from '@/lib/actions/products'
+import { formatDateTR } from '@/lib/format'
 import LogoutButton from '@/components/account/LogoutButton'
 import ProductCard from '@/components/products/ProductCard'
 import { useFavoritesStore } from '@/store/favoritesStore'
@@ -184,7 +185,7 @@ function OrderCard({ order }: { order: any }) {
           <p className="font-mono text-xs text-muted-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
           <p className="text-sm font-medium">
             {order.order_items?.length ?? 0} ürün
-            <span className="text-muted-foreground font-normal"> · {new Date(order.created_at).toLocaleDateString('tr-TR')}</span>
+            <span className="text-muted-foreground font-normal"> · {formatDateTR(order.created_at)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
@@ -344,7 +345,7 @@ function OrdersTab({ orders, profile }: { orders: any[]; profile: Props['profile
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="text-sm text-neutral-600">
-                        {new Date(order.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {formatDateTR(order.created_at, { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-center">
@@ -489,7 +490,7 @@ function IadeTab({ initialTickets, orders, userId }: { initialTickets: SupportTi
                 <option value="">Sipariş seçin...</option>
                 {orders.map((o: any) => (
                   <option key={o.id} value={o.id}>
-                    #{o.id.slice(0, 8).toUpperCase()} — {new Date(o.created_at).toLocaleDateString('tr-TR')} — {Number(o.total).toLocaleString('tr-TR')} ₺
+                    #{o.id.slice(0, 8).toUpperCase()} — {formatDateTR(o.created_at)} — {Number(o.total).toLocaleString('tr-TR')} ₺
                   </option>
                 ))}
               </select>
@@ -600,7 +601,7 @@ function IadeTab({ initialTickets, orders, userId }: { initialTickets: SupportTi
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(t.created_at).toLocaleDateString('tr-TR')}
+                    {formatDateTR(t.created_at)}
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-neutral-800">{t.subject}</p>
@@ -666,7 +667,7 @@ function ProfileTab({ user, profile }: { user: Props['user']; profile: Props['pr
       <div className="space-y-1.5">
         <Label>Üyelik Tarihi</Label>
         <p className="text-sm text-muted-foreground pt-1">
-          {new Date(user.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+          {formatDateTR(user.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
       <Button type="submit" disabled={saving} className="bg-[#222222] hover:bg-[#222222] hover:opacity-90 text-white">

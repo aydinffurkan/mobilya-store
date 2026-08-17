@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Search, Package, Truck, Check, Clock, CheckCircle2, XCircle, Loader2, ExternalLink } from 'lucide-react'
 import { lookupOrder } from '@/lib/actions/tracking'
 import type { TrackingOrder } from '@/lib/actions/tracking'
+import { formatDateTR } from '@/lib/format'
 
 // ── Durum eşlemeleri ──────────────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ function OrderResult({ order }: { order: TrackingOrder }) {
         <div>
           <p className="text-xs text-neutral-500 font-mono">Sipariş #{order.shortId}</p>
           <p className="text-sm text-neutral-500 mt-0.5">
-            {new Date(order.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {formatDateTR(order.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[order.status] ?? ''}`}>

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { formatDateTR } from '@/lib/format'
 
 interface Post {
   id: string
@@ -16,12 +17,7 @@ interface Post {
 }
 
 function formatDate(dateStr: string) {
-  // timeZone sabitlenmeli: aksi halde sunucu (Vercel/UTC) ile tarayıcı (TR/UTC+3)
-  // gün sınırına yakın tarihlerde farklı gün üretip hydration uyuşmazlığına
-  // (React #418) yol açıyor. Istanbul'a sabitleyince iki taraf da aynı çıktıyı verir.
-  return new Date(dateStr).toLocaleDateString('tr-TR', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul',
-  })
+  return formatDateTR(dateStr, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function BlogCarousel({ posts }: { posts: Post[] }) {

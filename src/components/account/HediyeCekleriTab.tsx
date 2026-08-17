@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Gift, Copy, Check, Loader2, AlertCircle, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import { getMyVouchers, type Voucher } from '@/lib/actions/points'
+import { formatDateTR } from '@/lib/format'
 import Link from 'next/link'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -130,10 +131,10 @@ function VoucherCard({
           <p className="text-xs text-muted-foreground mt-0.5">
             {v.points_used.toLocaleString('tr-TR')} puan ile oluşturuldu
             {v.status === 'active' && (
-              <> · Son kullanım: {new Date(v.expires_at).toLocaleDateString('tr-TR')}</>
+              <> · Son kullanım: {formatDateTR(v.expires_at)}</>
             )}
             {v.status === 'used' && v.used_at && (
-              <> · Kullanıldı: {new Date(v.used_at).toLocaleDateString('tr-TR')}</>
+              <> · Kullanıldı: {formatDateTR(v.used_at)}</>
             )}
           </p>
         </div>

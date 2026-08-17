@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Coins, TrendingDown, TrendingUp, Gift, Loader2, AlertCircle, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { getMyPoints, convertPointsToVoucher, type PointsSummary } from '@/lib/actions/points'
+import { formatDateTR } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,7 +19,7 @@ const REASON_LABEL: Record<string, string> = {
 
 function formatExpiry(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return formatDateTR(iso, { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export default function PuanlarimTab() {
@@ -244,7 +245,7 @@ export default function PuanlarimTab() {
                       {REASON_LABEL[row.reason] ?? row.reason}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(row.created_at).toLocaleDateString('tr-TR')}
+                      {formatDateTR(row.created_at)}
                       {row.expires_at && isPositive && (
                         <span> · Son kullanım: {formatExpiry(row.expires_at)}</span>
                       )}
