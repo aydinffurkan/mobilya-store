@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { formatDateTR } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { JSX } from 'react'
@@ -75,7 +76,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold">Sipariş #{shortId}</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
-            {new Date(order.created_at).toLocaleDateString('tr-TR', {
+            {formatDateTR(order.created_at, {
               day: 'numeric', month: 'long', year: 'numeric',
               hour: '2-digit', minute: '2-digit',
             })}
@@ -210,7 +211,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tarih</span>
-                <span>{new Date(order.created_at).toLocaleDateString('tr-TR')}</span>
+                <span>{formatDateTR(order.created_at)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Durum</span>

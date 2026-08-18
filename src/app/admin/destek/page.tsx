@@ -1,4 +1,5 @@
 import { getAdminTickets } from '@/lib/actions/support'
+import { formatDateTR } from '@/lib/format'
 import Link from 'next/link'
 import { AlertCircle, Wrench, RotateCcw } from 'lucide-react'
 
@@ -87,7 +88,7 @@ export default async function AdminDestekPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="text-xs text-muted-foreground">
-                        {new Date(t.created_at).toLocaleDateString('tr-TR')}
+                        {formatDateTR(t.created_at)}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right">

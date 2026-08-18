@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { formatDateTR } from '@/lib/format'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
@@ -55,7 +56,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </span>
         {post.published_at && (
           <span className="text-xs text-muted-foreground">
-            {new Date(post.published_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {formatDateTR(post.published_at, { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
         )}
       </div>

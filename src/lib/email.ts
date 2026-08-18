@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { formatDateTR } from '@/lib/format'
 import { createAdminClient } from './supabase/admin'
 
 // Lazy init: RESEND_API_KEY yoksa Resend constructor'ı hata fırlatır.
@@ -141,7 +142,7 @@ function orderConfirmationHtml(order: any): string {
   const shortId  = (order.id as string).slice(0, 8).toUpperCase()
   const fullName = addr.full_name ?? 'Değerli Müşterimiz'
   const total    = Number(order.total).toLocaleString('tr-TR')
-  const date     = new Date(order.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+  const date     = formatDateTR(order.created_at, { day: 'numeric', month: 'long', year: 'numeric' })
   const trackUrl = `${SITE_URL}/siparis-takip`
 
   const body = `
@@ -243,7 +244,7 @@ function adminNotificationHtml(order: any): string {
   const addr    = (order.shipping_address ?? {}) as Record<string, string>
   const shortId = (order.id as string).slice(0, 8).toUpperCase()
   const total   = Number(order.total).toLocaleString('tr-TR')
-  const date    = new Date(order.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const date    = formatDateTR(order.created_at, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const adminUrl = `${SITE_URL}/admin/siparisler/${order.id}`
 
   const body = `

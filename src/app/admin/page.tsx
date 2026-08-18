@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatDateTR } from '@/lib/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Package, ShoppingBag, Tag, TrendingUp, AlertTriangle } from 'lucide-react'
@@ -71,7 +72,7 @@ async function getDashboardData() {
       if (revenueByDay.has(key)) revenueByDay.set(key, (revenueByDay.get(key) ?? 0) + Number(o.total))
     })
     const revenueTrend = Array.from(revenueByDay.entries()).map(([key, value]) => ({
-      label: new Date(key).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+      label: formatDateTR(key, { day: 'numeric', month: 'short' }),
       value,
     }))
 
@@ -181,7 +182,7 @@ export default async function AdminDashboard() {
                 >
                   <div>
                     <p className="font-medium text-sm">{order.shipping_address?.full_name ?? '—'}</p>
-                    <p className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString('tr-TR')}</p>
+                    <p className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8).toUpperCase()} · {formatDateTR(order.created_at)}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-sm text-[#222222]">{Number(order.total).toLocaleString('tr-TR')} ₺</p>
@@ -244,7 +245,7 @@ export default async function AdminDashboard() {
                       <p className="text-sm font-medium">{u.user_metadata?.full_name ?? u.email}</p>
                       <p className="text-xs text-muted-foreground">{u.email}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString('tr-TR')}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTR(u.created_at)}</p>
                   </Link>
                 ))}
               </div>

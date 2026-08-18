@@ -1,4 +1,5 @@
 import { getAdminTicket } from '@/lib/actions/support'
+import { formatDateTR } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Wrench, RotateCcw, User, ShoppingBag } from 'lucide-react'
@@ -29,7 +30,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
         <div className="flex-1">
           <h1 className="text-xl font-bold">{ticket.subject}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {new Date(ticket.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            {formatDateTR(ticket.created_at, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
         <div className="flex items-center gap-2">

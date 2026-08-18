@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { formatDateTR } from '@/lib/format'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -184,7 +185,7 @@ export default function CustomersTable({ customers }: Props) {
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString('tr-TR')}
+                      {formatDateTR(user.created_at)}
                     </td>
                     <td className="px-4 py-3">{orderCount} sipariş</td>
                     <td className="px-4 py-3 font-semibold text-[#222222]">

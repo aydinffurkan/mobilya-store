@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatDateTR } from '@/lib/format'
 import { getCurrentUser } from '@/lib/supabase/auth-guard'
 import { getProductReviews, getUserReviewForProduct } from '@/lib/repositories/reviews'
 import StarRating from '@/components/products/StarRating'
@@ -69,7 +70,7 @@ export default async function ProductReviews({ productId }: { productId: string 
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-sm font-medium text-neutral-800">{r.author_name}</p>
                   <p className="text-xs text-neutral-400">
-                    {new Date(r.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {formatDateTR(r.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
                 <StarRating value={r.rating} size={13} />

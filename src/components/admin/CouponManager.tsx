@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDateTR } from '@/lib/format'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -140,7 +141,7 @@ export default function CouponManager({ initial }: Props) {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {coupon.min_amount > 0 && `Min. sepet: ${coupon.min_amount.toLocaleString('tr-TR')} ₺`}
                     {coupon.min_amount > 0 && coupon.expires_at && ' · '}
-                    {coupon.expires_at && `Son: ${new Date(coupon.expires_at).toLocaleDateString('tr-TR')}`}
+                    {coupon.expires_at && `Son: ${formatDateTR(coupon.expires_at)}`}
                     {coupon.min_amount === 0 && !coupon.expires_at && 'Tüm sepetlerde geçerli'}
                   </p>
                 </div>

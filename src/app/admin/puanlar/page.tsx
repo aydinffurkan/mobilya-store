@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { formatDateTR } from '@/lib/format'
 import Link from 'next/link'
 import { Coins, Users, TrendingUp, Gift, Settings2, History, UserPlus, ChevronRight } from 'lucide-react'
 import PointsConfigForm from '@/components/admin/PointsConfigForm'
@@ -188,7 +189,7 @@ export default async function AdminPuanlarPage({
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(u.last_activity).toLocaleDateString('tr-TR')}
+                          {formatDateTR(u.last_activity)}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
@@ -262,7 +263,7 @@ export default async function AdminPuanlarPage({
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(tx.created_at).toLocaleDateString('tr-TR', {
+                          {formatDateTR(tx.created_at, {
                             day: '2-digit', month: '2-digit', year: 'numeric',
                           })}
                         </span>

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { formatDateTR } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Mail, Phone, Calendar, ShoppingCart, TrendingUp, Eye, Package, ExternalLink, Tag } from 'lucide-react'
@@ -109,7 +110,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     #{order.id.slice(0, 8).toUpperCase()}
                   </Link>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(order.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {formatDateTR(order.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -152,7 +153,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               )}
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                 <Calendar size={13} className="flex-shrink-0" />
-                <span>Üyelik: {new Date(user.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                <span>Üyelik: {formatDateTR(user.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
 
@@ -201,7 +202,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{v.product?.name}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {new Date(v.viewed_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {formatDateTR(v.viewed_at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     <p className="text-xs font-semibold text-[#222222] flex-shrink-0">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { formatDateTR } from '@/lib/format'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -335,7 +336,7 @@ export default function OrdersTable({ orders }: { orders: any[] }) {
                         {Number(order.total).toLocaleString('tr-TR')} ₺
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {new Date(order.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {formatDateTR(order.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link

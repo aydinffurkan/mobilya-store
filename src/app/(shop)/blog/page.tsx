@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatDateTR } from '@/lib/format'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Clock } from 'lucide-react'
@@ -72,7 +73,7 @@ export default async function BlogPage() {
                     {post.read_time} dk okuma
                   </span>
                   {post.published_at && (
-                    <span>{new Date(post.published_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    <span>{formatDateTR(post.published_at, { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   )}
                 </div>
               </div>

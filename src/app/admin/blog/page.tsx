@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatDateTR } from '@/lib/format'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Plus, Pencil, Newspaper } from 'lucide-react'
 import DeleteBlogPostButton from './DeleteBlogPostButton'
@@ -70,7 +71,7 @@ export default async function AdminBlogPage() {
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell">
                       <span className="text-sm text-muted-foreground">
-                        {new Date(post.created_at).toLocaleDateString('tr-TR')}
+                        {formatDateTR(post.created_at)}
                       </span>
                     </td>
                     <td className="px-5 py-4">
