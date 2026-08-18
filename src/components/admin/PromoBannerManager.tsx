@@ -87,6 +87,7 @@ export default function PromoBannerManager({ slot, label, initial }: Props) {
             <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e, false)} />
             {uploading ? <Loader2 size={20} className="animate-spin text-muted-foreground" /> : <ImagePlus size={20} className="text-muted-foreground" />}
             <span className="text-sm text-muted-foreground mt-2">{uploading ? 'Yükleniyor...' : 'Masaüstü banner yükle'}</span>
+            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[#222222] bg-secondary/60 px-2 py-0.5 rounded-full">Önerilen boyut: 2880 × 400 px</span>
           </label>
         )}
       </div>
@@ -107,6 +108,7 @@ export default function PromoBannerManager({ slot, label, initial }: Props) {
             <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e, true)} />
             {uploadingMobile ? <Loader2 size={20} className="animate-spin text-muted-foreground" /> : <ImagePlus size={20} className="text-muted-foreground" />}
             <span className="text-sm text-muted-foreground mt-2">{uploadingMobile ? 'Yükleniyor...' : 'Mobil banner yükle (isteğe bağlı)'}</span>
+            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[#222222] bg-secondary/60 px-2 py-0.5 rounded-full">Önerilen boyut: 1500 × 500 px</span>
           </label>
         )}
       </div>
