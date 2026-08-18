@@ -479,7 +479,7 @@ export default function HeaderMegaMenu({
                   if (!cat) return null
                   const hasCards = (cat.promoCards?.length ?? 0) > 0
                   return (
-                    <div className="absolute left-0 top-full z-40 flex bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] min-w-[680px] max-w-[calc(100vw-2rem)] overflow-x-hidden">
+                    <div className="absolute left-0 right-0 top-full z-40 flex bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-x-hidden">
                       {cat.sub.length > 0 && (
                         <div className={`${cat.sub.length > 16 ? 'w-[690px]' : cat.sub.length > 8 ? 'w-[460px]' : 'w-[230px]'} flex-shrink-0 py-6 px-7 border-r border-neutral-100`}>
                           <Link href={`/kategori/${cat.slug}`}
