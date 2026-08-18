@@ -73,7 +73,7 @@ export default function PromoBannerManager({ slot, label, initial }: Props) {
 
       {/* Masaüstü görseli */}
       <div>
-        <p className="text-xs font-medium text-muted-foreground mb-2">Masaüstü Görseli <span className="text-[11px] opacity-60">(önerilen: 1440×200px)</span></p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">Masaüstü Görseli <span className="text-[11px] opacity-60">(önerilen: 2880×400px — Retina için; en az 1440×200)</span></p>
         {imageUrl ? (
           <div className="relative w-full rounded-xl overflow-hidden border border-border" style={{ aspectRatio: '7/1' }}>
             <Image src={imageUrl} alt="Banner" fill className="object-cover" />
@@ -93,7 +93,7 @@ export default function PromoBannerManager({ slot, label, initial }: Props) {
 
       {/* Mobil görseli */}
       <div>
-        <p className="text-xs font-medium text-muted-foreground mb-2">Mobil Görseli <span className="text-[11px] opacity-60">(önerilen: 750×250px — yüklenmezse masaüstü kırpılır)</span></p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">Mobil Görseli <span className="text-[11px] opacity-60">(önerilen: 1500×500px — Retina için; yüklenmezse masaüstü kırpılır)</span></p>
         {mobileImageUrl ? (
           <div className="relative w-full rounded-xl overflow-hidden border border-border" style={{ aspectRatio: '3/1' }}>
             <Image src={mobileImageUrl} alt="Mobil banner" fill className="object-cover" />

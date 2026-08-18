@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 
 export interface PromoBannerData {
@@ -34,24 +35,30 @@ export default async function PromoBanner({ slot }: Props) {
 
   return (
     <Link href={banner.href} className="block w-full group">
+      {/* next/image + sizes="100vw": tam genişlik banner'da yüksek-DPI (Retina)
+          ekranlar için uygun çözünürlükte srcSet üretir → bulanıklığı önler. */}
       {banner.mobile_image_url ? (
         <>
           {/* Mobil — ayrı görsel */}
           <div className="sm:hidden relative w-full" style={{ aspectRatio: '3/1' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={banner.mobile_image_url}
               alt={banner.alt || 'Kampanya'}
-              className="absolute inset-0 w-full h-full object-cover object-center group-hover:opacity-95 transition-opacity"
+              fill
+              sizes="100vw"
+              quality={95}
+              className="object-cover object-center group-hover:opacity-95 transition-opacity"
             />
           </div>
           {/* Masaüstü — ayrı görsel, sabit oran */}
           <div className="hidden sm:block relative w-full" style={{ aspectRatio: '1440/200' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={banner.image_url}
               alt={banner.alt || 'Kampanya'}
-              className="absolute inset-0 w-full h-full object-cover object-center group-hover:opacity-95 transition-opacity"
+              fill
+              sizes="100vw"
+              quality={95}
+              className="object-cover object-center group-hover:opacity-95 transition-opacity"
             />
           </div>
         </>
@@ -59,20 +66,24 @@ export default async function PromoBanner({ slot }: Props) {
         <>
           {/* Mobil — masaüstü görseli 3:1 oranla kırpılır */}
           <div className="sm:hidden relative w-full" style={{ aspectRatio: '3/1' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={banner.image_url}
               alt={banner.alt || 'Kampanya'}
-              className="absolute inset-0 w-full h-full object-cover object-center group-hover:opacity-95 transition-opacity"
+              fill
+              sizes="100vw"
+              quality={95}
+              className="object-cover object-center group-hover:opacity-95 transition-opacity"
             />
           </div>
           {/* Masaüstü — sabit 1440×200 oranı, tam genişlik */}
           <div className="hidden sm:block relative w-full" style={{ aspectRatio: '1440/200' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={banner.image_url}
               alt={banner.alt || 'Kampanya'}
-              className="absolute inset-0 w-full h-full object-cover object-center group-hover:opacity-95 transition-opacity"
+              fill
+              sizes="100vw"
+              quality={95}
+              className="object-cover object-center group-hover:opacity-95 transition-opacity"
             />
           </div>
         </>
