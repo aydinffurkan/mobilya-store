@@ -481,7 +481,7 @@ export default function HeaderMegaMenu({
                   return (
                     <div className="absolute left-0 top-full z-40 flex bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] min-w-[680px] max-w-[calc(100vw-2rem)] overflow-x-hidden">
                       {cat.sub.length > 0 && (
-                        <div className="w-[230px] flex-shrink-0 py-6 px-7 border-r border-neutral-100">
+                        <div className={`${cat.sub.length > 16 ? 'w-[690px]' : cat.sub.length > 8 ? 'w-[460px]' : 'w-[230px]'} flex-shrink-0 py-6 px-7 border-r border-neutral-100`}>
                           <Link href={`/kategori/${cat.slug}`}
                             className="flex items-center gap-1.5 text-[14px] font-semibold text-neutral-900 hover:text-[#222222] transition-colors mb-5">
                             {cat.name}
@@ -489,7 +489,7 @@ export default function HeaderMegaMenu({
                               <path d="M11.7 3.9l5.6 5.7a1 1 0 0 1 0 1.4L11.7 16c-.3.3-.7.4-1.1.3a1 1 0 0 1-.6-1.7l4.6-4.6H3.1a1 1 0 0 1 0-2h11.5L10 3.4a1 1 0 0 1 1.7-1.2l-.1.1z" fill="currentColor" />
                             </svg>
                           </Link>
-                          <ul className="space-y-0.5">
+                          <ul className={cat.sub.length > 16 ? 'columns-3 gap-x-8 [&>li]:break-inside-avoid' : cat.sub.length > 8 ? 'columns-2 gap-x-8 [&>li]:break-inside-avoid' : 'space-y-0.5'}>
                             {cat.sub.map((s) => (
                               <li key={s.slug}>
                                 <Link href={`/kategori/${s.slug}`}
