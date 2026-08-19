@@ -81,10 +81,26 @@ export async function duplicateProduct(productId: string): Promise<{ id: string 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _id, created_at: _ca, updated_at: _ua, variants, components, category, ...productFields } = original
 
+  // Görsel dosyalarını da kopyala — kopya, orijinalle AYNI storage dosyasını
+  // paylaşmasın. Aksi halde birinde görsel düzenlen/silinince paylaşılan dosya
+  // storage'dan silinir ve diğer üründe görseller kırılır.
+  const origImages: string[] = Array.isArray(original.images) ? original.images : []
+  const copiedImages: string[] = []
+  for (const url of origImages) {
+    const fromPath = url.split('/product-images/')[1]?.split('?')[0]
+    if (!fromPath) { copiedImages.push(url); continue }
+    const ext = fromPath.includes('.') ? fromPath.split('.').pop() : 'jpg'
+    const toPath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error: copyErr } = await adminClient.storage.from('product-images').copy(fromPath, toPath)
+    if (copyErr) { copiedImages.push(url); continue } // kopyalanamazsa paylaşımlı bırak (best-effort)
+    copiedImages.push(adminClient.storage.from('product-images').getPublicUrl(toPath).data.publicUrl)
+  }
+
   const { data: newProduct, error: insertError } = await adminClient
     .from('products')
     .insert({
       ...productFields,
+      images: copiedImages,
       name: `Kopya - ${original.name}`,
       slug: newSlug,
       is_active: false,
