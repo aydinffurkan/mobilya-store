@@ -28,3 +28,20 @@ export async function requireAdmin() {
   }
   return user
 }
+
+/** Owner (ana admin) sayfaları için — admin değilse anasayfaya, owner değilse /admin'e yönlendirir */
+export async function requireOwnerPage() {
+  const user = await getCurrentUser()
+  if (!user || user.app_metadata?.role !== 'admin') redirect('/')
+  if (user.app_metadata?.is_owner !== true) redirect('/admin')
+  return user
+}
+
+/** Owner-only server action'ları için — owner değilse hata fırlatır */
+export async function requireOwner() {
+  const user = await getCurrentUser()
+  if (!user || user.app_metadata?.role !== 'admin' || user.app_metadata?.is_owner !== true) {
+    throw new Error('Bu işlem için owner yetkisi gerekli')
+  }
+  return user
+}

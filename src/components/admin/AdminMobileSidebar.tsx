@@ -6,7 +6,7 @@ import { Menu, LogOut } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import AdminNav from '@/components/admin/AdminNav'
 
-export default function AdminMobileSidebar({ pendingTickets = 0, pendingOrders = 0 }: { pendingTickets?: number; pendingOrders?: number }) {
+export default function AdminMobileSidebar({ pendingTickets = 0, pendingOrders = 0, isOwner = false }: { pendingTickets?: number; pendingOrders?: number; isOwner?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -23,7 +23,7 @@ export default function AdminMobileSidebar({ pendingTickets = 0, pendingOrders =
             <p className="text-xs text-gray-400 mt-0.5">Admin Paneli</p>
           </div>
           <div className="flex-1 overflow-y-auto" onClick={() => setOpen(false)}>
-            <AdminNav pendingTickets={pendingTickets} pendingOrders={pendingOrders} />
+            <AdminNav pendingTickets={pendingTickets} pendingOrders={pendingOrders} isOwner={isOwner} />
           </div>
           <div className="p-3 border-t border-gray-700">
             <Link

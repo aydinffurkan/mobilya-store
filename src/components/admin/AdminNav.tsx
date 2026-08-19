@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, Tag, ShoppingBag, Users, Settings, Wrench, Search, Layers, Home, Truck, Newspaper, HeadphonesIcon, CreditCard, Coins } from 'lucide-react'
+import { LayoutDashboard, Package, Tag, ShoppingBag, Users, Settings, Wrench, Search, Layers, Home, Truck, Newspaper, HeadphonesIcon, CreditCard, Coins, ShieldCheck } from 'lucide-react'
 
 interface NavLeaf {
   href: string
@@ -43,14 +43,19 @@ const navItems: NavEntry[] = [
   },
 ]
 
-export default function AdminNav({ pendingTickets = 0, pendingOrders = 0 }: { pendingTickets?: number; pendingOrders?: number }) {
+export default function AdminNav({ pendingTickets = 0, pendingOrders = 0, isOwner = false }: { pendingTickets?: number; pendingOrders?: number; isOwner?: boolean }) {
   const pathname = usePathname()
 
   const isActive = (href: string) => (href === '/admin' ? pathname === '/admin' : pathname.startsWith(href))
 
+  // "Adminler" yalnızca owner'a görünür
+  const items: NavEntry[] = isOwner
+    ? [...navItems, { href: '/admin/adminler', label: 'Adminler', icon: ShieldCheck }]
+    : navItems
+
   return (
     <nav className="flex-1 p-3 space-y-1">
-      {navItems.map((entry) => {
+      {items.map((entry) => {
         if (isGroup(entry)) {
           const { label, icon: Icon, children } = entry
           return (

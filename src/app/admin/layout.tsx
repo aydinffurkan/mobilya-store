@@ -103,7 +103,8 @@ async function getActivityData() {
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAdminPage()
+  const adminUser = await requireAdminPage()
+  const isOwner = adminUser.app_metadata?.is_owner === true
   const { urgentCount, counts, activities } = await getActivityData()
 
   return (
@@ -116,7 +117,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <p className="text-xs text-gray-400 mt-0.5">Admin Paneli</p>
         </div>
-        <AdminNav pendingTickets={counts.tickets} pendingOrders={counts.orders + counts.transfers} />
+        <AdminNav pendingTickets={counts.tickets} pendingOrders={counts.orders + counts.transfers} isOwner={isOwner} />
         <div className="p-3 border-t border-gray-700">
           <Link
             href="/auth/giris"
@@ -131,7 +132,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="flex-1 overflow-auto min-w-0">
         <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-white">
           <div className="flex items-center gap-3">
-            <AdminMobileSidebar pendingTickets={counts.tickets} pendingOrders={counts.orders + counts.transfers} />
+            <AdminMobileSidebar pendingTickets={counts.tickets} pendingOrders={counts.orders + counts.transfers} isOwner={isOwner} />
             <Link href="/" className="md:hidden text-sm font-bold text-[#222222]">
               MOBİLYA<span className="text-foreground">STORE</span>
             </Link>
