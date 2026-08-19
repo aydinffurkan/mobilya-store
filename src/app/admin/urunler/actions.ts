@@ -47,6 +47,9 @@ export async function saveProduct(productId: string | null, payload: ProductPayl
   }
 
   revalidatePath('/admin/urunler')
+  // Ürün detay sayfasını slug ile açıkça tazele — iç içe dinamik rotanın
+  // istemci Router Cache'i '/', 'layout' ile bazen tam temizlenmiyor.
+  if (payload.slug) revalidatePath('/urunler/' + payload.slug)
   revalidatePath('/', 'layout')
   return { id: id! }
 }
