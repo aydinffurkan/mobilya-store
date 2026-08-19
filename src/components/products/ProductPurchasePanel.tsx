@@ -68,11 +68,12 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
       ? Math.round((1 - basePrice / originalPrice) * 100)
       : null
 
-  const cartDiscountPct = !hasVariantPrice && !usesComponentPricing
-    ? product.cart_discount_percent
-    : null
+  // Sepet indirimi tüm ürün tiplerine (normal/varyant/parça) uygulanır —
+  // cartStore.totalPrice ile birebir aynı: indirim, gösterilen fiyat
+  // (parça ürünlerde parça toplamı) üzerinden hesaplanır.
+  const cartDiscountPct = product.cart_discount_percent ?? null
   const cartPrice = cartDiscountPct
-    ? Math.round(basePrice * (1 - cartDiscountPct / 100))
+    ? Math.round(displayPrice * (1 - cartDiscountPct / 100))
     : null
   const hasAnyDiscount = !!originalPrice || !!cartDiscountPct
 
