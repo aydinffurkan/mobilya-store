@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Minus, Plus, TrendingDown } from 'lucide-react'
+import { Minus, Plus, TrendingDown, ShoppingCart } from 'lucide-react'
+import { cartDiscountBadgeColors, cartDiscountTextColor } from '@/lib/utils/cartDiscount'
 import { useCartStore } from '@/store/cartStore'
 import { useCartPreviewStore } from '@/store/cartPreviewStore'
 import { Product, ProductVariant, SelectedComponent } from '@/types'
@@ -109,48 +110,52 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
       {/* Fiyat */}
       <div className="border-b border-neutral-100 pb-5 space-y-3">
 
-        {/* Normal fiyat üstü çizili + indirimli fiyat */}
-        <div className="space-y-1">
+        {/* İndirim rozeti + üstü çizili eski fiyat + büyük indirimli fiyat */}
+        <div className="space-y-1.5">
           {originalPrice && !usesComponentPricing ? (
             <>
-              <div className="flex items-center gap-2.5">
-                <span className="text-sm text-neutral-400 font-light line-through">
-                  {originalPrice.toLocaleString('tr-TR')} ₺
-                </span>
+              <div className="flex items-center gap-2.5 flex-wrap">
                 {discountPercent !== null && discountPercent > 0 && (
-                  <span className="text-xs font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
-                    -%{discountPercent}
+                  <span className="inline-flex items-center text-[13px] font-bold text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-md">
+                    %{discountPercent} İNDİRİM
                   </span>
                 )}
+                <span className="text-base text-neutral-400 font-light line-through">
+                  {originalPrice.toLocaleString('tr-TR')} ₺
+                </span>
               </div>
-              <span className="text-3xl font-light tracking-wide text-neutral-900 block">
+              <span className="text-[34px] leading-none font-semibold tracking-tight text-neutral-900 block">
                 {displayPrice.toLocaleString('tr-TR')} ₺
               </span>
             </>
           ) : (
-            <span className="text-3xl font-light tracking-wide text-neutral-900 block">
+            <span className="text-[34px] leading-none font-semibold tracking-tight text-neutral-900 block">
               {displayPrice.toLocaleString('tr-TR')} ₺
             </span>
           )}
-
-          {/* Sepette indirim */}
-          {cartDiscountPct && cartPrice && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded">
-                Sepette %{cartDiscountPct} İndirim
-              </span>
-              <span className="text-base font-medium text-amber-700">
-                → {cartPrice.toLocaleString('tr-TR')} ₺
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Son 30 günün en düşük fiyatı rozeti */}
+        {/* Son 30 günün en düşük fiyatı */}
         {hasAnyDiscount && (
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-md px-2.5 py-1.5">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
             <TrendingDown size={12} className="flex-shrink-0" />
             Son 30 Günün En Düşük Fiyatı
+          </div>
+        )}
+
+        {/* Sepette İndirim — belirgin vurgulu kutu (Vivense tarzı) */}
+        {cartDiscountPct && cartPrice && (
+          <div className={`rounded-xl border p-3.5 ${cartDiscountBadgeColors(cartDiscountPct)}`}>
+            <div className="flex items-center gap-1.5 text-[13px] font-bold">
+              <ShoppingCart size={14} className="flex-shrink-0" />
+              Sepette %{cartDiscountPct} İndirim!
+            </div>
+            <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+              <span className={`text-[26px] leading-none font-bold ${cartDiscountTextColor(cartDiscountPct)}`}>
+                {cartPrice.toLocaleString('tr-TR')} ₺
+              </span>
+              <span className="text-[11px] font-medium opacity-70">sepete eklendiğinde</span>
+            </div>
           </div>
         )}
 
@@ -316,8 +321,8 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
                 {displayPrice.toLocaleString('tr-TR')} ₺
               </p>
               {cartPrice && (
-                <p className="text-xs text-amber-700 font-medium">
-                  → Sepette: {cartPrice.toLocaleString('tr-TR')} ₺
+                <p className={`text-xs font-bold ${cartDiscountTextColor(cartDiscountPct!)}`}>
+                  Sepette: {cartPrice.toLocaleString('tr-TR')} ₺
                 </p>
               )}
             </div>
