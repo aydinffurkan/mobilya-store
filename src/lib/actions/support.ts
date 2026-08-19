@@ -143,4 +143,6 @@ export async function updateTicketStatus(
 
   revalidatePath('/admin/destek')
   revalidatePath(`/admin/destek/${id}`)
+  // Rozet sayısı admin layout'unda; talep çözülünce rozet anında düşsün.
+  revalidatePath('/admin', 'layout')
 }

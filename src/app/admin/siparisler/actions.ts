@@ -10,6 +10,9 @@ const NOTIFY_STATUSES = new Set(['confirmed', 'shipped', 'delivered', 'cancelled
 const revalidate = () => {
   revalidatePath('/admin/siparisler')
   revalidatePath('/admin/siparisler/[id]', 'page')
+  // Rozet sayıları admin layout'unda hesaplanıyor; layout'u da tazele ki
+  // sipariş işlenince rozet hard refresh olmadan güncellensin.
+  revalidatePath('/admin', 'layout')
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
