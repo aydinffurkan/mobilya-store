@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     )]
 
     const [{ data: dbProducts }, { data: dbVariants }, { data: dbComponents }] = await Promise.all([
-      admin.from('products').select('id, price, sale_price, name').in('id', productIds),
+      admin.from('products').select('id, price, sale_price, name, cart_discount_percent').in('id', productIds),
       variantIds.length > 0
         ? admin.from('product_variants').select('id, price, sale_price, product_id').in('id', variantIds)
         : Promise.resolve({ data: [] as { id: string; price: number; sale_price: number | null; product_id: string }[] }),
@@ -92,6 +92,10 @@ export async function POST(req: NextRequest) {
         if (!product) return NextResponse.json({ error: `Ürün bulunamadı: ${item.product_id}` }, { status: 400 })
         unitPrice = product.sale_price ?? product.price
       }
+
+      // Sepet indirimi (cart_discount_percent) — cartStore.totalPrice ile birebir, tüm tiplerde uygulanır
+      const cdp = productMap.get(item.product_id)?.cart_discount_percent
+      if (cdp) unitPrice = Math.round(unitPrice * (1 - cdp / 100))
 
       const qty = Math.max(1, Math.floor(Number(item.quantity)))
       verifiedTotal += unitPrice * qty
