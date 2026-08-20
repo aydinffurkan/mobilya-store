@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import { Minus, Plus, TrendingDown, ShoppingCart } from 'lucide-react'
 import { cartDiscountBadgeColors, cartDiscountTextColor } from '@/lib/utils/cartDiscount'
 import { useCartStore } from '@/store/cartStore'
@@ -18,6 +19,8 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
   const activeVariants = (product.variants ?? [])
     .filter((v) => v.is_active)
     .sort((a, b) => a.sort_order - b.sort_order)
+  const optionKey = Object.keys(activeVariants[0]?.attributes ?? {})[0] ?? null
+  const optionTitle = optionKey ? `${optionKey} Seçenekleri` : 'Seçenekler'
 
   const activeComponents = useMemo(
     () =>
@@ -173,45 +176,45 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
         )}
       </div>
 
-      {/* Varyant seçimi */}
+      {/* Seçenekler (varyantlar) — Vivense tarzı görselli grid */}
       {activeVariants.length > 0 && (
-        <div className="space-y-3">
-          <span className="text-[11px] tracking-wider text-neutral-500 font-medium uppercase block">
-            Seçenek
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {activeVariants.map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => v.stock > 0 && selectVariant(v)}
-                className={`relative px-4 py-2 text-sm font-light border overflow-hidden transition-all duration-150 rounded-sm ${
-                  selectedVariant?.id === v.id
-                    ? 'border-neutral-900 bg-neutral-900 text-white'
-                    : v.stock === 0
-                    ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
-                    : 'border-neutral-200 text-neutral-700 hover:border-neutral-500'
-                }`}
-              >
-                {v.name}
-                {v.stock === 0 && (
-                  <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                    aria-hidden
-                  >
-                    <line x1="5" y1="95" x2="95" y2="5" stroke="#d1d5db" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                  </svg>
-                )}
-              </button>
-            ))}
+        <div className="border border-neutral-100 rounded-lg overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50/60">
+            <span className="text-[13px] font-semibold text-neutral-700">{optionTitle}</span>
           </div>
-          {selectedVariant && Object.keys(selectedVariant.attributes ?? {}).length > 0 && (
-            <p className="text-xs text-neutral-400 font-light">
-              {Object.entries(selectedVariant.attributes).map(([k, v]) => `${k}: ${v}`).join(' · ')}
-            </p>
-          )}
+          <div className="p-3 grid grid-cols-3 gap-2.5">
+            {activeVariants.map((v) => {
+              const selected = selectedVariant?.id === v.id
+              const vImg = v.image_url ?? product.images?.[0] ?? null
+              const vPrice = v.sale_price ?? v.price
+              const vLabel = (optionKey && v.attributes?.[optionKey]) || v.name
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => v.stock > 0 && selectVariant(v)}
+                  disabled={v.stock === 0}
+                  className={`text-left rounded-lg border overflow-hidden transition-all ${
+                    selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'border-neutral-200 hover:border-neutral-400'
+                  } ${v.stock === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                >
+                  <div className="relative aspect-square bg-neutral-50">
+                    {vImg ? (
+                      <Image src={vImg} alt={vLabel} fill className="object-cover" sizes="120px" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-neutral-300 text-lg">🛋️</div>
+                    )}
+                  </div>
+                  <div className="px-2 py-1.5">
+                    <p className="text-[11px] text-neutral-600 truncate">{vLabel}</p>
+                    {vPrice != null && (
+                      <p className="text-[12px] font-bold text-neutral-900">{vPrice.toLocaleString('tr-TR')} ₺</p>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
