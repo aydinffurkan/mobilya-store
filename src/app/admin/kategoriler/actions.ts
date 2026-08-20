@@ -14,19 +14,25 @@ interface CategoryPayload {
 }
 
 export async function saveCategory(categoryId: string | null, payload: CategoryPayload) {
-  await requireAdmin()
-  const adminClient = createAdminClient()
+  // GEÇİCİ TEŞHİS: gerçek hatayı yüzeye çıkar (production jenerik mesajı gizliyor)
+  try {
+    await requireAdmin()
+    const adminClient = createAdminClient()
 
-  if (categoryId) {
-    const { error } = await adminClient.from('categories').update(payload).eq('id', categoryId)
-    if (error) throw new Error(error.message)
-  } else {
-    const { error } = await adminClient.from('categories').insert({ ...payload, created_at: new Date().toISOString() })
-    if (error) throw new Error(error.message)
+    if (categoryId) {
+      const { error } = await adminClient.from('categories').update(payload).eq('id', categoryId)
+      if (error) throw new Error('DB update: ' + error.message)
+    } else {
+      const { error } = await adminClient.from('categories').insert({ ...payload, created_at: new Date().toISOString() })
+      if (error) throw new Error('DB insert: ' + error.message)
+    }
+
+    revalidatePath('/admin/kategoriler')
+    revalidatePath('/', 'layout')
+  } catch (e) {
+    console.error('[saveCategory] GERÇEK HATA:', e)
+    throw new Error('TEŞHİS » ' + (e instanceof Error ? `${e.name}: ${e.message}` : String(e)))
   }
-
-  revalidatePath('/admin/kategoriler')
-  revalidatePath('/', 'layout')
 }
 
 export async function saveCategoryPromoCards(categoryId: string, cards: CategoryPromoCard[]) {
