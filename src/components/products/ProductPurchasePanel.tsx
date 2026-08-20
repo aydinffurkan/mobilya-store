@@ -65,7 +65,7 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
     return sum + qty * c.unit_price
   }, 0)
 
-  const displayPrice = usesComponentPricing ? componentsTotal : basePrice
+  const displayPrice = (usesComponentPricing && !hasVariantPrice) ? componentsTotal : basePrice
   const discountPercent =
     !usesComponentPricing && originalPrice
       ? Math.round((1 - basePrice / originalPrice) * 100)
@@ -198,9 +198,9 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
                     selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'border-neutral-200 hover:border-neutral-400'
                   } ${v.stock === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
-                  <div className="relative aspect-square bg-neutral-50">
+                  <div className="relative aspect-[4/3] bg-neutral-50">
                     {vImg ? (
-                      <Image src={vImg} alt={vLabel} fill className="object-cover" sizes="120px" />
+                      <Image src={vImg} alt={vLabel} fill quality={95} className="object-cover" sizes="(max-width: 1024px) 30vw, 160px" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-neutral-300 text-lg">🛋️</div>
                     )}
