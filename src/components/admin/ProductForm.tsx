@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { saveProduct, saveProductDetailFields } from '@/app/admin/urunler/actions'
 import VariantManager from '@/components/admin/VariantManager'
+import GroupManager from '@/components/admin/GroupManager'
 import ComponentManager from '@/components/admin/ComponentManager'
 import {
   Category, Product, ProductSpec, ProductDimension, FAQItem,
@@ -56,7 +57,7 @@ function sortCategoriesHierarchical(categories: Category[]): { category: Categor
   return result
 }
 
-type TabId = 'genel' | 'gorseller' | 'detaylar' | 'varyantlar' | 'parcalar'
+type TabId = 'genel' | 'gorseller' | 'detaylar' | 'varyantlar' | 'parcalar' | 'grup'
 
 interface Props {
   categories: Category[]
@@ -91,6 +92,7 @@ export default function ProductForm({
     { id: 'detaylar',   label: 'Detaylar',        show: isEdit },
     { id: 'varyantlar', label: 'Varyantlar',      show: true   },
     { id: 'parcalar',   label: 'Parçalar',        show: isEdit },
+    { id: 'grup',       label: 'Seçenek Grubu',   show: isEdit },
   ]
 
   // ── Görseller ────────────────────────────────────────────────────────────
@@ -876,6 +878,13 @@ export default function ProductForm({
       {isEdit && (
         <div className={activeTab !== 'parcalar' ? 'hidden' : ''}>
           <ComponentManager productId={product.id} components={product.components ?? []} templates={componentTemplates} />
+        </div>
+      )}
+
+      {/* TAB: Seçenek Grubu */}
+      {isEdit && (
+        <div className={activeTab !== 'grup' ? 'hidden' : ''}>
+          <GroupManager productId={product.id} initialLabel={product.variant_group_label ?? null} />
         </div>
       )}
 

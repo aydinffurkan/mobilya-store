@@ -69,6 +69,8 @@ export interface Product {
   fast_delivery: boolean
   cart_discount_percent: number | null
   lowest_price_30d: number | null
+  variant_group_id: string | null
+  variant_group_label: string | null
   created_at: string
   updated_at: string
   variants?: ProductVariant[]

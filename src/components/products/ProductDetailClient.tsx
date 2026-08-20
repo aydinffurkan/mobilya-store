@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Share2, Check, Truck, ShieldCheck, Wrench, RotateCcw } from 'lucide-react'
 import { Product } from '@/types'
 import ProductImageGallery from '@/components/products/ProductImageGallery'
@@ -16,7 +17,17 @@ const SERVICES = [
   { icon: RotateCcw,   label: '30 Gün İade',       sub: 'Koşulsuz iade, tam para iadesi.'   },
 ]
 
-export default function ProductDetailClient({ product }: { product: Product }) {
+interface GroupOption {
+  id: string
+  name: string
+  slug: string
+  images: string[]
+  price: number
+  sale_price: number | null
+  variant_group_label: string | null
+}
+
+export default function ProductDetailClient({ product, groupOptions = [] }: { product: Product; groupOptions?: GroupOption[] }) {
   const [shareCopied, setShareCopied] = useState(false)
 
   const handleShare = useCallback(async () => {
@@ -108,6 +119,43 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             }
           </button>
         </div>
+
+        {/* Bağlı ürün seçenekleri (grup) — tıklayınca o ürünün sayfası açılır */}
+        {groupOptions.length > 1 && (
+          <div className="border border-neutral-100 rounded-lg overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50/60">
+              <span className="text-[13px] font-semibold text-neutral-700">Seçenekler</span>
+            </div>
+            <div className="p-3 grid grid-cols-3 gap-2.5">
+              {groupOptions.map((opt) => {
+                const current = opt.id === product.id
+                const img = opt.images?.[0] ?? null
+                const price = opt.sale_price ?? opt.price
+                const label = opt.variant_group_label || opt.name
+                const inner = (
+                  <>
+                    <div className="relative aspect-[4/3] bg-neutral-50">
+                      {img ? (
+                        <Image src={img} alt={label} fill quality={95} className="object-cover" sizes="(max-width: 1024px) 30vw, 160px" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-neutral-300 text-lg">🛋️</div>
+                      )}
+                    </div>
+                    <div className="px-2 py-1.5">
+                      <p className="text-[11px] text-neutral-600 truncate">{label}</p>
+                      <p className="text-[12px] font-bold text-neutral-900">{price.toLocaleString('tr-TR')} ₺</p>
+                    </div>
+                  </>
+                )
+                return current ? (
+                  <div key={opt.id} className="rounded-lg border-2 border-neutral-900 overflow-hidden">{inner}</div>
+                ) : (
+                  <Link key={opt.id} href={`/urunler/${opt.slug}`} className="rounded-lg border border-neutral-200 hover:border-neutral-400 overflow-hidden transition-all block">{inner}</Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Satın Alma Paneli */}
         <ProductPurchasePanel

@@ -531,3 +531,73 @@ export async function applyComponentTemplate(productId: string, templateId: stri
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
 }
+
+// ─── Bağlı ürün grubu (Vivense tarzı seçenekler) ──────────────────────────────
+
+export interface GroupProductLite {
+  id: string
+  name: string
+  slug: string
+  images: string[]
+  price: number
+  sale_price: number | null
+  variant_group_id: string | null
+  variant_group_label: string | null
+}
+
+const GROUP_SELECT = 'id, name, slug, images, price, sale_price, variant_group_id, variant_group_label'
+
+export async function searchProductsForGroup(query: string): Promise<GroupProductLite[]> {
+  await requireAdmin()
+  const q = query.trim()
+  if (q.length < 2) return []
+  const adminClient = createAdminClient()
+  const { data } = await adminClient.from('products').select(GROUP_SELECT).ilike('name', `%${q}%`).limit(10)
+  return (data as GroupProductLite[]) ?? []
+}
+
+export async function getGroupMembers(productId: string): Promise<GroupProductLite[]> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+  const { data: prod } = await adminClient.from('products').select('variant_group_id').eq('id', productId).single()
+  if (!prod?.variant_group_id) return []
+  const { data } = await adminClient.from('products').select(GROUP_SELECT).eq('variant_group_id', prod.variant_group_id)
+  return ((data as GroupProductLite[]) ?? []).filter((p) => p.id !== productId)
+}
+
+export async function addToGroup(productId: string, targetId: string): Promise<void> {
+  await requireAdmin()
+  if (productId === targetId) throw new Error('Ürün kendisine bağlanamaz')
+  const adminClient = createAdminClient()
+
+  const { data: prod } = await adminClient.from('products').select('variant_group_id').eq('id', productId).single()
+  let groupId = prod?.variant_group_id as string | null | undefined
+  if (!groupId) {
+    groupId = crypto.randomUUID()
+    const { error } = await adminClient.from('products').update({ variant_group_id: groupId, updated_at: new Date().toISOString() }).eq('id', productId)
+    if (error) throw new Error(error.message)
+  }
+  const { error } = await adminClient.from('products').update({ variant_group_id: groupId, updated_at: new Date().toISOString() }).eq('id', targetId)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin/urunler')
+  revalidatePath('/', 'layout')
+}
+
+export async function removeFromGroup(productId: string): Promise<void> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+  const { error } = await adminClient.from('products').update({ variant_group_id: null, updated_at: new Date().toISOString() }).eq('id', productId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/urunler')
+  revalidatePath('/', 'layout')
+}
+
+export async function setGroupLabel(productId: string, label: string): Promise<void> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+  const { error } = await adminClient.from('products').update({ variant_group_label: label.trim() || null, updated_at: new Date().toISOString() }).eq('id', productId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/urunler')
+  revalidatePath('/', 'layout')
+}
