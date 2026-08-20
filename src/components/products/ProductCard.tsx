@@ -97,7 +97,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const cartPrice   = cartDiscountPct ? Math.round(basePrice * (1 - cartDiscountPct / 100)) : null
   const displayPrice = cartPrice ?? product.sale_price ?? product.price
 
-  const colors = extractColors(product.variants)
+  // Seçenek (varyant) gösterimi: renk ise swatch, değilse etiketli "Seçenekler" butonu
+  const optionKey     = Object.keys(activeVariants[0]?.attributes ?? {})[0] ?? null
+  const isColorOption = optionKey ? isColorKey(optionKey) : false
+  const colors        = isColorOption ? extractColors(product.variants) : []
+  const optionLabel   = optionKey ? `${optionKey} Seçenekleri` : 'Seçenekler'
 
   /* ── Fare pozisyonu → görsel indeksi ── */
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -333,6 +337,17 @@ export default function ProductCard({ product }: { product: Product }) {
             )}
           </button>
         )}
+
+        {/* Renk dışı seçenekler (ölçü, fonksiyon vb.) — etiketli buton */}
+        {!isColorOption && activeVariants.length > 0 && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); setShowVariantPicker(true) }}
+            className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium text-neutral-600 border border-neutral-200 rounded-full px-2.5 py-1 hover:border-neutral-400 hover:text-neutral-900 transition-colors"
+          >
+            {optionLabel} ({activeVariants.length})
+          </button>
+        )}
       </div>
     </Link>
 
@@ -374,7 +389,7 @@ export default function ProductCard({ product }: { product: Product }) {
                   const colorEntry = Object.entries(variant.attributes ?? {}).find(([k]) => isColorKey(k))
                   const colorName  = colorEntry?.[1] ?? variant.name
                   const price      = (variant.sale_price ?? variant.price) ?? 0
-                  const imgSrc     = images[vi] ?? images[0] ?? null
+                  const imgSrc     = variant.image_url ?? images[vi] ?? images[0] ?? null
                   return (
                     <Link
                       key={variant.id}

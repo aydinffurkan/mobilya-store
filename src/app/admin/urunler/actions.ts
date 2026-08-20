@@ -25,7 +25,7 @@ interface ProductPayload {
   dimensions?: { name: string; width: string; depth: string; height: string }[]
 }
 
-export async function saveProduct(productId: string | null, payload: ProductPayload): Promise<{ id: string }> {
+export async function saveProduct(productId: string | null, payload: ProductPayload, variants?: VariantPayload[]): Promise<{ id: string }> {
   await requireAdmin()
   const adminClient = createAdminClient()
   let id = productId
@@ -44,6 +44,13 @@ export async function saveProduct(productId: string | null, payload: ProductPayl
       .single()
     if (error) throw new Error(error.message)
     id = data.id
+
+    // Ürün eklerken staged seçenekleri (varyantları) da yaz
+    if (variants?.length) {
+      const rows = variants.map((v, i) => ({ ...v, product_id: id, sort_order: v.sort_order ?? i, created_at: new Date().toISOString() }))
+      const { error: vErr } = await adminClient.from('product_variants').insert(rows)
+      if (vErr) throw new Error(vErr.message)
+    }
   }
 
   revalidatePath('/admin/urunler')
@@ -369,6 +376,7 @@ interface VariantPayload {
   stock: number
   is_active: boolean
   sort_order: number
+  image_url?: string | null
 }
 
 export async function saveVariant(productId: string, variantId: string | null, payload: VariantPayload) {

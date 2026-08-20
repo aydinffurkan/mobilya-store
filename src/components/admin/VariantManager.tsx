@@ -8,12 +8,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { saveVariant, deleteVariant } from '@/app/admin/urunler/actions'
 import { ProductVariant, VariantTemplate } from '@/types'
-import { Plus, Pencil, Trash2, X, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, ImagePlus } from 'lucide-react'
+import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   productId: string
   variants: ProductVariant[]
   templates: VariantTemplate[]
+  staged?: boolean
+  onVariantsChange?: (v: ProductVariant[]) => void
 }
 
 interface AttrRow {
@@ -29,6 +33,7 @@ interface FormState {
   stock: string
   sort_order: string
   is_active: boolean
+  image_url: string | null
 }
 
 const emptyForm = (sortOrder: number): FormState => ({
@@ -39,6 +44,7 @@ const emptyForm = (sortOrder: number): FormState => ({
   stock: '0',
   sort_order: String(sortOrder),
   is_active: true,
+  image_url: null,
 })
 
 const toFormState = (v: ProductVariant): FormState => ({
@@ -51,9 +57,10 @@ const toFormState = (v: ProductVariant): FormState => ({
   stock: String(v.stock),
   sort_order: String(v.sort_order),
   is_active: v.is_active,
+  image_url: v.image_url ?? null,
 })
 
-export default function VariantManager({ productId, variants, templates }: Props) {
+export default function VariantManager({ productId, variants, templates, staged = false, onVariantsChange }: Props) {
   const router = useRouter()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -120,6 +127,26 @@ export default function VariantManager({ productId, variants, templates }: Props
       if (key.trim()) attributes[key.trim()] = value.trim()
     }
 
+    if (staged) {
+      const v: ProductVariant = {
+        id: editingId ?? `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        product_id: '',
+        name: form.name.trim(),
+        attributes,
+        price: form.price.trim() ? Number(form.price) : null,
+        sale_price: form.sale_price.trim() ? Number(form.sale_price) : null,
+        stock: Number(form.stock) || 0,
+        is_active: form.is_active,
+        sort_order: Number(form.sort_order) || 0,
+        image_url: form.image_url,
+        created_at: '', updated_at: '',
+      }
+      onVariantsChange?.(editingId ? variants.map((x) => (x.id === editingId ? v : x)) : [...variants, v])
+      toast.success(editingId ? 'Seçenek güncellendi' : 'Seçenek eklendi')
+      cancel()
+      return
+    }
+
     setSaving(true)
     try {
       await saveVariant(productId, editingId, {
@@ -130,6 +157,7 @@ export default function VariantManager({ productId, variants, templates }: Props
         stock: Number(form.stock) || 0,
         sort_order: Number(form.sort_order) || 0,
         is_active: form.is_active,
+        image_url: form.image_url,
       })
       toast.success(editingId ? 'Varyant güncellendi' : 'Varyant eklendi')
       cancel()
@@ -143,6 +171,7 @@ export default function VariantManager({ productId, variants, templates }: Props
 
   const handleDelete = async (variantId: string) => {
     if (!confirm('Bu varyantı silmek istediğinize emin misiniz?')) return
+    if (staged) { onVariantsChange?.(variants.filter((v) => v.id !== variantId)); return }
     setDeletingId(variantId)
     try {
       await deleteVariant(variantId)
@@ -277,6 +306,23 @@ function VariantForm({
 }) {
   const [pickerTemplateId, setPickerTemplateId] = useState('')
   const pickerTemplate = templates.find((t) => t.id === pickerTemplateId) ?? null
+  const [uploading, setUploading] = useState(false)
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `variant-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { data, error } = await supabase.storage.from('product-images').upload(path, file)
+      if (error) throw new Error(error.message)
+      setForm({ ...form, image_url: supabase.storage.from('product-images').getPublicUrl(data.path).data.publicUrl })
+    } catch (e) {
+      toast.error('Görsel yüklenemedi: ' + (e instanceof Error ? e.message : ''))
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="border border-[#222222]/40 rounded-xl p-4 space-y-3 bg-[#222222]/5">
@@ -287,6 +333,25 @@ function VariantForm({
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="örn. Siyah / Büyük Boy"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Görsel <span className="text-xs text-muted-foreground font-normal">(bu seçeneğin fotoğrafı)</span></Label>
+        {form.image_url ? (
+          <div className="relative w-28 h-28 rounded-lg overflow-hidden border border-border">
+            <Image src={form.image_url} alt="" fill className="object-cover" sizes="112px" />
+            <button type="button" onClick={() => setForm({ ...form, image_url: null })}
+              className="absolute top-1 right-1 bg-white/90 hover:bg-white rounded-full p-1 shadow">
+              <X size={12} />
+            </button>
+          </div>
+        ) : (
+          <label className={`flex flex-col items-center justify-center w-28 h-28 rounded-lg border-2 border-dashed border-border cursor-pointer hover:bg-secondary/20 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = '' }} />
+            {uploading ? <Loader2 size={18} className="animate-spin text-muted-foreground" /> : <ImagePlus size={18} className="text-muted-foreground" />}
+            <span className="text-[10px] text-muted-foreground mt-1">{uploading ? 'Yükleniyor' : 'Görsel'}</span>
+          </label>
+        )}
       </div>
 
       {templates.length > 0 && (

@@ -15,7 +15,7 @@ import VariantManager from '@/components/admin/VariantManager'
 import ComponentManager from '@/components/admin/ComponentManager'
 import {
   Category, Product, ProductSpec, ProductDimension, FAQItem,
-  VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate, Supplier,
+  VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate, Supplier, ProductVariant,
 } from '@/types'
 import { ImagePlus, X, Loader2, Pencil, Plus, GripVertical, ZoomIn } from 'lucide-react'
 import ImageEditor from '@/components/shared/ImageEditor'
@@ -89,13 +89,14 @@ export default function ProductForm({
     { id: 'genel',      label: 'Genel Bilgiler', show: true   },
     { id: 'gorseller',  label: 'Görseller',       show: isEdit },
     { id: 'detaylar',   label: 'Detaylar',        show: isEdit },
-    { id: 'varyantlar', label: 'Varyantlar',      show: isEdit },
+    { id: 'varyantlar', label: 'Varyantlar',      show: true   },
     { id: 'parcalar',   label: 'Parçalar',        show: isEdit },
   ]
 
   // ── Görseller ────────────────────────────────────────────────────────────
   const [images,      setImages]      = useState<string[]>(product?.images ?? [])
   const [uploading,   setUploading]   = useState(false)
+  const [stagedVariants, setStagedVariants] = useState<ProductVariant[]>([])
   const [editorState, setEditorState] = useState<{ src: string; existingUrl?: string } | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -283,7 +284,10 @@ export default function ProductForm({
       dimensions:     dimensions.filter((d) => d.name.trim()),
     }
     try {
-      const result = await saveProduct(isEdit ? product.id : null, payload)
+      const variantPayloads = !isEdit && stagedVariants.length > 0
+        ? stagedVariants.map((v) => ({ name: v.name, attributes: v.attributes, price: v.price, sale_price: v.sale_price, stock: v.stock, is_active: v.is_active, sort_order: v.sort_order, image_url: v.image_url }))
+        : undefined
+      const result = await saveProduct(isEdit ? product.id : null, payload, variantPayloads)
       if (isEdit) {
         toast.success('Ürün güncellendi')
         router.push('/admin/urunler')
@@ -859,6 +863,12 @@ export default function ProductForm({
       {isEdit && (
         <div className={activeTab !== 'varyantlar' ? 'hidden' : ''}>
           <VariantManager productId={product.id} variants={product.variants ?? []} templates={variantTemplates} />
+        </div>
+      )}
+
+      {!isEdit && (
+        <div className={activeTab !== 'varyantlar' ? 'hidden' : ''}>
+          <VariantManager productId="" variants={stagedVariants} templates={variantTemplates} staged onVariantsChange={setStagedVariants} />
         </div>
       )}
 
