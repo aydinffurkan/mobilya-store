@@ -6,12 +6,13 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { Search, Loader2, Link2, Trash2 } from 'lucide-react'
 import {
-  searchProductsForGroup, addToGroup, removeFromGroup, setGroupLabel, getGroupMembers,
+  searchProductsForGroup, addToGroup, removeFromGroup, setGroupLabel, setGroupTitle, getGroupMembers,
   type GroupProductLite,
 } from '@/app/admin/urunler/actions'
 
-export default function GroupManager({ productId, initialLabel }: { productId: string; initialLabel: string | null }) {
+export default function GroupManager({ productId, initialLabel, initialTitle }: { productId: string; initialLabel: string | null; initialTitle: string | null }) {
   const router = useRouter()
+  const [title, setTitle]       = useState(initialTitle ?? '')
   const [label, setLabel]       = useState(initialLabel ?? '')
   const [members, setMembers]   = useState<GroupProductLite[]>([])
   const [query, setQuery]       = useState('')
@@ -60,6 +61,11 @@ export default function GroupManager({ productId, initialLabel }: { productId: s
     catch (e) { toast.error(e instanceof Error ? e.message : 'Kaydedilemedi') }
   }
 
+  const saveTitle = async () => {
+    try { await setGroupTitle(productId, title); toast.success('Başlık kaydedildi'); router.refresh() }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Kaydedilemedi') }
+  }
+
   return (
     <div className="bg-white border border-border rounded-2xl p-5 space-y-5">
       <div>
@@ -67,6 +73,21 @@ export default function GroupManager({ productId, initialLabel }: { productId: s
         <p className="text-xs text-muted-foreground mt-0.5">
           Bu ürünü farklı ölçü/kurulum ürünleriyle grupla. Müşteri detay sayfasında seçeneklere tıklayınca ilgili ürünün sayfası açılır.
         </p>
+      </div>
+
+      {/* Grup başlığı (detay sayfasındaki başlık) */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground">Seçenekler başlığı <span className="opacity-60">(detay sayfasında görünür)</span></label>
+        <div className="flex gap-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder='örn. "Masa Ölçüsü" veya "Açılır Kapanır"'
+            className="flex-1 border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#222222]/20"
+          />
+          <button type="button" onClick={saveTitle} className="px-4 bg-[#222222] text-white rounded-xl text-sm hover:opacity-90">Kaydet</button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">Tüm grup için ortak başlık. Boşsa &quot;Seçenekler&quot; kullanılır.</p>
       </div>
 
       {/* Bu ürünün grup etiketi */}

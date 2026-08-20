@@ -3,6 +3,8 @@
 -- variant_group_id: aynı grubun ürünleri aynı değeri paylaşır.
 -- variant_group_label: bu ürünün gruptaki etiketi (ör. "190x92", "8 Sandalyeli").
 -- Supabase Dashboard → SQL Editor'de çalıştırın.
+-- variant_group_title: detay sayfasındaki seçenekler başlığı (ör. "Masa Ölçüsü", "Açılır Kapanır")
 alter table products add column if not exists variant_group_id text;
 alter table products add column if not exists variant_group_label text;
+alter table products add column if not exists variant_group_title text;
 create index if not exists idx_products_variant_group on products(variant_group_id);

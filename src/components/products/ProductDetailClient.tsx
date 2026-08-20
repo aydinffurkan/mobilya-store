@@ -124,7 +124,7 @@ export default function ProductDetailClient({ product, groupOptions = [] }: { pr
         {groupOptions.length > 1 && (
           <div className="border border-neutral-100 rounded-lg overflow-hidden">
             <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50/60">
-              <span className="text-[13px] font-semibold text-neutral-700">Seçenekler</span>
+              <span className="text-[13px] font-semibold text-neutral-700">{product.variant_group_title || 'Seçenekler'}</span>
             </div>
             <div className="p-3 grid grid-cols-3 gap-2.5">
               {groupOptions.map((opt) => {

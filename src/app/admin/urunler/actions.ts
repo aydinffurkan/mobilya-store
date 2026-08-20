@@ -601,3 +601,21 @@ export async function setGroupLabel(productId: string, label: string): Promise<v
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
 }
+
+export async function setGroupTitle(productId: string, title: string): Promise<void> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+  const t = title.trim() || null
+  const { data: prod } = await adminClient.from('products').select('variant_group_id').eq('id', productId).single()
+  const gid = prod?.variant_group_id as string | null | undefined
+  if (gid) {
+    // Grubun tüm üyelerinde aynı başlık
+    const { error } = await adminClient.from('products').update({ variant_group_title: t, updated_at: new Date().toISOString() }).eq('variant_group_id', gid)
+    if (error) throw new Error(error.message)
+  } else {
+    const { error } = await adminClient.from('products').update({ variant_group_title: t, updated_at: new Date().toISOString() }).eq('id', productId)
+    if (error) throw new Error(error.message)
+  }
+  revalidatePath('/admin/urunler')
+  revalidatePath('/', 'layout')
+}

@@ -71,6 +71,7 @@ export interface Product {
   lowest_price_30d: number | null
   variant_group_id: string | null
   variant_group_label: string | null
+  variant_group_title: string | null
   created_at: string
   updated_at: string
   variants?: ProductVariant[]

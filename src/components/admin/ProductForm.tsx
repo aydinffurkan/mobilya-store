@@ -884,7 +884,7 @@ export default function ProductForm({
       {/* TAB: Seçenek Grubu */}
       {isEdit && (
         <div className={activeTab !== 'grup' ? 'hidden' : ''}>
-          <GroupManager productId={product.id} initialLabel={product.variant_group_label ?? null} />
+          <GroupManager productId={product.id} initialLabel={product.variant_group_label ?? null} initialTitle={product.variant_group_title ?? null} />
         </div>
       )}
 
