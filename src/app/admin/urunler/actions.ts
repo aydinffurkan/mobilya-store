@@ -635,13 +635,18 @@ export async function createProductFromComponent(componentId: string, categoryId
 
   const { data: comp } = await adminClient
     .from('product_components')
-    .select('name, unit_price, image_url, stock')
+    .select('name, unit_price, image_url, stock, product_id')
     .eq('id', componentId)
     .single()
   if (!comp) throw new Error('Parça bulunamadı')
 
+  // Ürün adının başına bağlı olduğu takım ürününün ilk kelimesini ekle
+  const { data: parent } = await adminClient.from('products').select('name').eq('id', comp.product_id).single()
+  const firstWord = (parent?.name ?? '').trim().split(/\s+/)[0] ?? ''
+  const finalName = firstWord ? `${firstWord} ${comp.name}` : comp.name
+
   // Benzersiz slug bul
-  const base = slugifyTr(comp.name) || 'urun'
+  const base = slugifyTr(finalName) || 'urun'
   const { data: clashes } = await adminClient.from('products').select('slug').like('slug', `${base}%`)
   const taken = new Set((clashes ?? []).map((r: { slug: string }) => r.slug))
   let slug = base
@@ -651,7 +656,7 @@ export async function createProductFromComponent(componentId: string, categoryId
   const { data: prod, error } = await adminClient
     .from('products')
     .insert({
-      name: comp.name,
+      name: finalName,
       slug,
       price: comp.unit_price ?? 0,
       category_id: categoryId,
@@ -666,5 +671,5 @@ export async function createProductFromComponent(componentId: string, categoryId
 
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
-  return { id: prod.id, name: comp.name }
+  return { id: prod.id, name: finalName }
 }
