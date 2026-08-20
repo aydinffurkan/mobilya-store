@@ -619,3 +619,52 @@ export async function setGroupTitle(productId: string, title: string): Promise<v
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
 }
+
+// ─── Parçadan ayrı ürün oluştur (bağımsız kopya) ──────────────────────────────
+
+function slugifyTr(str: string): string {
+  const map: Record<string, string> = { ç:'c', ğ:'g', ı:'i', ö:'o', ş:'s', ü:'u', Ç:'c', Ğ:'g', İ:'i', Ö:'o', Ş:'s', Ü:'u' }
+  return str.split('').map((ch) => map[ch] ?? ch).join('')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
+export async function createProductFromComponent(componentId: string, categoryId: string): Promise<{ id: string; name: string }> {
+  await requireAdmin()
+  if (!categoryId) throw new Error('Kategori seçiniz')
+  const adminClient = createAdminClient()
+
+  const { data: comp } = await adminClient
+    .from('product_components')
+    .select('name, unit_price, image_url, stock')
+    .eq('id', componentId)
+    .single()
+  if (!comp) throw new Error('Parça bulunamadı')
+
+  // Benzersiz slug bul
+  const base = slugifyTr(comp.name) || 'urun'
+  const { data: clashes } = await adminClient.from('products').select('slug').like('slug', `${base}%`)
+  const taken = new Set((clashes ?? []).map((r: { slug: string }) => r.slug))
+  let slug = base
+  let n = 2
+  while (taken.has(slug)) slug = `${base}-${n++}`
+
+  const { data: prod, error } = await adminClient
+    .from('products')
+    .insert({
+      name: comp.name,
+      slug,
+      price: comp.unit_price ?? 0,
+      category_id: categoryId,
+      stock: comp.stock ?? 0,
+      images: comp.image_url ? [comp.image_url] : [],
+      is_active: true,
+      created_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin/urunler')
+  revalidatePath('/', 'layout')
+  return { id: prod.id, name: comp.name }
+}

@@ -7,15 +7,16 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { saveComponent, deleteComponent, applyComponentTemplate } from '@/app/admin/urunler/actions'
+import { saveComponent, deleteComponent, applyComponentTemplate, createProductFromComponent } from '@/app/admin/urunler/actions'
 import { ProductComponent, ComponentTemplate } from '@/types'
-import { Plus, Pencil, Trash2, Loader2, Wand2, ImagePlus, X as XIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, Wand2, ImagePlus, X as XIcon, PackagePlus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   productId: string
   components: ProductComponent[]
   templates?: ComponentTemplate[]
+  categories?: { id: string; name: string }[]
 }
 
 interface FormState {
@@ -54,8 +55,23 @@ const toFormState = (c: ProductComponent): FormState => ({
   image_url: c.image_url ?? '',
 })
 
-export default function ComponentManager({ productId, components, templates = [] }: Props) {
+export default function ComponentManager({ productId, components, templates = [], categories = [] }: Props) {
   const router = useRouter()
+  const [spawnId, setSpawnId] = useState<string | null>(null)
+  const [spawnCat, setSpawnCat] = useState('')
+  const [spawning, setSpawning] = useState(false)
+
+  const handleSpawn = async (componentId: string) => {
+    if (!spawnCat) { toast.error('Kategori seçiniz'); return }
+    setSpawning(true)
+    try {
+      const res = await createProductFromComponent(componentId, spawnCat)
+      toast.success(`"${res.name}" ayrı ürün olarak oluşturuldu. Ürünler bölümünden düzenleyebilirsiniz.`)
+      setSpawnId(null); setSpawnCat('')
+      router.refresh()
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Oluşturulamadı') }
+    finally { setSpawning(false) }
+  }
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState<FormState | null>(null)
@@ -241,6 +257,15 @@ export default function ComponentManager({ productId, components, templates = []
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     type="button"
+                    onClick={() => { setSpawnId(spawnId === component.id ? null : component.id); setSpawnCat('') }
+}
+                    title="Ayrı ürün olarak ekle"
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <PackagePlus size={14} />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => startEdit(component)}
                     className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                   >
@@ -255,6 +280,18 @@ export default function ComponentManager({ productId, components, templates = []
                     {deletingId === component.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                   </button>
                 </div>
+              </div>
+            )}
+            {spawnId === component.id && (
+              <div className="mt-1.5 flex items-center gap-2 border border-dashed border-border rounded-xl px-4 py-2.5 bg-secondary/20">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Ayrı ürün olarak ekle →</span>
+                <select value={spawnCat} onChange={(e) => setSpawnCat(e.target.value)} className="flex-1 min-w-0 px-2 py-1.5 border border-border rounded-lg text-sm bg-background">
+                  <option value="">Kategori seçin...</option>
+                  {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
+                <button type="button" onClick={() => void handleSpawn(component.id)} disabled={spawning} className="px-3 py-1.5 bg-[#222222] text-white rounded-lg text-sm disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap">
+                  {spawning ? <Loader2 size={13} className="animate-spin" /> : <PackagePlus size={13} />} Oluştur
+                </button>
               </div>
             )}
           </div>
