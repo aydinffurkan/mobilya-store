@@ -189,25 +189,25 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* Sepette İndirim rozeti — büyük yuvarlak */}
+        {/* Sepette İndirim rozeti — büyük yuvarlak (mobilde küçültülmüş, görseli kapatmasın) */}
         {cartDiscountPct && (
-          <div className={`absolute top-2 left-2 z-10 w-[62px] h-[62px] rounded-full bg-gradient-to-br ${cartDiscountGradient(cartDiscountPct)} shadow-lg ring-2 ring-white/40 flex flex-col items-center justify-center select-none gap-[1px]`}>
-            <span className="text-white font-bold text-[7.5px] tracking-wide uppercase leading-none">Sepette</span>
-            <span className="text-white font-black text-[18px] leading-tight">%{cartDiscountPct}</span>
-            <span className="text-white font-bold text-[7.5px] tracking-wide uppercase leading-none">İndirim</span>
+          <div className={`absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10 w-11 h-11 sm:w-[62px] sm:h-[62px] rounded-full bg-gradient-to-br ${cartDiscountGradient(cartDiscountPct)} shadow-lg ring-2 ring-white/40 flex flex-col items-center justify-center select-none gap-[1px]`}>
+            <span className="text-white font-bold text-[5.5px] sm:text-[7.5px] tracking-wide uppercase leading-none">Sepette</span>
+            <span className="text-white font-black text-[12px] sm:text-[18px] leading-tight">%{cartDiscountPct}</span>
+            <span className="text-white font-bold text-[5.5px] sm:text-[7.5px] tracking-wide uppercase leading-none">İndirim</span>
           </div>
         )}
 
-        {/* Sale rozeti — sağ üst köşe */}
+        {/* Sale rozeti — sağ üst köşe (mobilde küçültülmüş) */}
         {!!saleDiscountPct && (
-          <div className="absolute top-2 right-2 z-10 w-[50px] h-[50px] rounded-full bg-red-500 shadow-md ring-2 ring-white/40 flex flex-col items-center justify-center select-none">
-            <span className="text-white font-black text-[15px] leading-none">-{saleDiscountPct}</span>
-            <span className="text-white/90 font-bold text-[11px] leading-none">%</span>
+          <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-10 w-9 h-9 sm:w-[50px] sm:h-[50px] rounded-full bg-red-500 shadow-md ring-2 ring-white/40 flex flex-col items-center justify-center select-none">
+            <span className="text-white font-black text-[10px] sm:text-[15px] leading-none">-{saleDiscountPct}</span>
+            <span className="text-white/90 font-bold text-[8px] sm:text-[11px] leading-none">%</span>
           </div>
         )}
 
         {/* Diğer rozetler */}
-        <div className={`absolute left-2.5 flex flex-col gap-1.5 z-10 ${cartDiscountPct ? 'top-[70px]' : 'top-2.5'}`}>
+        <div className={`absolute left-1.5 sm:left-2.5 flex flex-col gap-1.5 z-10 ${cartDiscountPct ? 'top-14 sm:top-[70px]' : 'top-2.5'}`}>
           {product.is_featured && !cartDiscountPct && !saleDiscountPct && (
             <span className="bg-[#222222] text-white text-[11px] font-semibold px-2 py-0.5 rounded-md leading-tight">
               Öne Çıkan
