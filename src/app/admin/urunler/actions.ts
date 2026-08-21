@@ -97,6 +97,10 @@ export async function duplicateProduct(productId: string): Promise<{ id: string 
   // Strip relation/meta fields before inserting
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _id, created_at: _ca, updated_at: _ua, variants, components, category, ...productFields } = original
+  // Kopya, orijinalin seçenek grubuna dahil olmasın — temiz başlasın.
+  delete (productFields as Record<string, unknown>).variant_group_id
+  delete (productFields as Record<string, unknown>).variant_group_label
+  delete (productFields as Record<string, unknown>).variant_group_title
 
   // Görsel dosyalarını da kopyala — kopya, orijinalle AYNI storage dosyasını
   // paylaşmasın. Aksi halde birinde görsel düzenlen/silinince paylaşılan dosya
