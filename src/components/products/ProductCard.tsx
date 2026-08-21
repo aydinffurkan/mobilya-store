@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useCartPreviewStore } from '@/store/cartPreviewStore'
 import FavoriteButton from '@/components/products/FavoriteButton'
 import { cartDiscountGradient, cartDiscountTextColor } from '@/lib/utils/cartDiscount'
+import { getVariantGroupOptions, type GroupCardOption } from '@/lib/actions/products'
 
 /* ── Renk haritası (Türkçe isim → hex) ─────────────────────────────────────── */
 const COLOR_MAP: Record<string, string> = {
@@ -74,6 +75,18 @@ export default function ProductCard({ product }: { product: Product }) {
   const [idx,               setIdx]               = useState(0)
   const [touchStart,        setTouchStart]        = useState<number | null>(null)
   const [showVariantPicker, setShowVariantPicker] = useState(false)
+  const [groupOpen, setGroupOpen] = useState(false)
+  const [groupOptions, setGroupOptions] = useState<GroupCardOption[]>([])
+  const [groupLoaded, setGroupLoaded] = useState(false)
+
+  const openGroup = useCallback(async () => {
+    setGroupOpen(true)
+    if (!groupLoaded && product.variant_group_id) {
+      const opts = await getVariantGroupOptions(product.variant_group_id)
+      setGroupOptions(opts)
+      setGroupLoaded(true)
+    }
+  }, [groupLoaded, product.variant_group_id])
 
   const activeVariants = (product.variants ?? []).filter((v) => v.is_active)
 
@@ -348,6 +361,17 @@ export default function ProductCard({ product }: { product: Product }) {
             {optionLabel} ({activeVariants.length})
           </button>
         )}
+
+        {/* Seçenek grubu (bağlı ürünler) — Vivense tarzı buton */}
+        {product.variant_group_id && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); void openGroup() }}
+            className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium text-neutral-600 border border-neutral-200 rounded-full px-2.5 py-1 hover:border-neutral-400 hover:text-neutral-900 transition-colors"
+          >
+            {product.variant_group_title || 'Seçenekler'}
+          </button>
+        )}
       </div>
     </Link>
 
@@ -409,6 +433,50 @@ export default function ProductCard({ product }: { product: Product }) {
                     </Link>
                   )
                 })}
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </>
+    )}
+
+    {/* ── Seçenek Grubu — Bottom Sheet ── */}
+    {groupOpen && (
+      <>
+        <div className="fixed inset-0 z-40" onClick={() => setGroupOpen(false)} />
+        <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1360px] mx-auto">
+          <div className="bg-white rounded-t-xl shadow-[0_-6px_24px_rgba(0,0,0,0.08)] border-t border-l border-r border-neutral-100">
+            <div className="flex justify-center pt-2.5 pb-0"><div className="w-8 h-[3px] rounded-full bg-neutral-200" /></div>
+            <div className="flex items-center justify-between px-4 pt-2 pb-2.5 border-b border-neutral-100">
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-neutral-800 line-clamp-1">{product.name}</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">{product.variant_group_title || 'Diğer Seçenekler'} ({groupOptions.length})</p>
+              </div>
+              <button onClick={() => setGroupOpen(false)} className="ml-3 flex-shrink-0 w-7 h-7 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center transition-colors" aria-label="Kapat">
+                <X size={13} className="text-neutral-500" />
+              </button>
+            </div>
+            <div className="overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-3 px-4 py-3" style={{ width: 'max-content' }}>
+                {groupOptions.map((opt) => {
+                  const current = opt.id === product.id
+                  const img = opt.images?.[0] ?? null
+                  const price = opt.sale_price ?? opt.price
+                  const label = opt.variant_group_label || opt.name
+                  return (
+                    <Link key={opt.id} href={`/urunler/${opt.slug}`} onClick={() => setGroupOpen(false)}
+                      className={`group flex-shrink-0 w-[110px] ${current ? 'pointer-events-none' : ''}`}>
+                      <div className={`w-[110px] h-[110px] rounded-lg overflow-hidden bg-[#F8F8F6] relative border ${current ? 'border-neutral-900' : 'border-neutral-100 group-hover:border-neutral-300'} transition-colors`}>
+                        {img ? <Image src={img} alt={label} fill className="object-cover" sizes="110px" /> : <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xl">🛋️</div>}
+                      </div>
+                      <p className="text-[11px] font-medium text-neutral-600 mt-1.5 truncate">{label}</p>
+                      <p className="text-[12px] font-bold text-neutral-900">{price.toLocaleString('tr-TR')} ₺</p>
+                    </Link>
+                  )
+                })}
+                {groupLoaded && groupOptions.length === 0 && <p className="text-sm text-neutral-400 px-2 py-4">Seçenek bulunamadı.</p>}
               </div>
             </div>
           </div>
