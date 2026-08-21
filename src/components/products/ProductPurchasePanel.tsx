@@ -6,6 +6,7 @@ import { Minus, Plus, TrendingDown, ShoppingCart } from 'lucide-react'
 import { cartDiscountBadgeColors, cartDiscountTextColor } from '@/lib/utils/cartDiscount'
 import { useCartStore } from '@/store/cartStore'
 import { useCartPreviewStore } from '@/store/cartPreviewStore'
+import { useStickyBarStore } from '@/store/stickyBarStore'
 import { Product, ProductVariant, SelectedComponent } from '@/types'
 import FavoriteButton from '@/components/products/FavoriteButton'
 
@@ -38,6 +39,7 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
   const addButtonRef = useRef<HTMLButtonElement>(null)
   const addItem = useCartStore((s) => s.addItem)
   const showPreview = useCartPreviewStore((s) => s.show)
+  const setStickyBarVisible = useStickyBarStore((s) => s.setVisible)
 
   useEffect(() => {
     const el = addButtonRef.current
@@ -49,6 +51,13 @@ export default function ProductPurchasePanel({ product, componentQuantities, onC
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+
+  // Diğer sabit köşe widget'ları (WhatsApp vb.) bu sticky çubukla çakışmasın diye
+  // görünürlüğünü paylaşılan store'a yansıt.
+  useEffect(() => {
+    setStickyBarVisible(showSticky)
+    return () => setStickyBarVisible(false)
+  }, [showSticky, setStickyBarVisible])
 
   const usesComponentPricing = activeComponents.length > 0
 

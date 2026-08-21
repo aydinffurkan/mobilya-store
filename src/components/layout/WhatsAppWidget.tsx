@@ -1,11 +1,14 @@
 'use client'
 
+import { useStickyBarStore } from '@/store/stickyBarStore'
+
 interface Props {
   phone: string
   message?: string
 }
 
 export default function WhatsAppWidget({ phone, message }: Props) {
+  const stickyBarVisible = useStickyBarStore((s) => s.visible)
   const href =
     'https://wa.me/' +
     phone.replace(/\D/g, '') +
@@ -17,7 +20,9 @@ export default function WhatsAppWidget({ phone, message }: Props) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="WhatsApp ile iletişime geçin"
-      className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#25D366]"
+      className={`fixed right-5 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#25D366] ${
+        stickyBarVisible ? 'bottom-24 sm:bottom-5' : 'bottom-5'
+      }`}
       style={{ backgroundColor: '#25D366' }}
     >
       {/* WhatsApp SVG */}
