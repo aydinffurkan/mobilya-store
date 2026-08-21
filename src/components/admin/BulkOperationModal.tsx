@@ -22,6 +22,9 @@ const PRICE_OPS: { value: BulkOpType; label: string; hasInput: boolean; inputLab
   { value: 'price_decrease_pct',  label: 'Normal fiyatı indir (%)',        hasInput: true, inputLabel: 'İndirim oranı',  inputType: 'pct' },
   { value: 'price_increase_fixed', label: 'Normal fiyatı artır (₺)',      hasInput: true, inputLabel: 'Artış tutarı',   inputType: 'tl'  },
   { value: 'price_decrease_fixed', label: 'Normal fiyatı indir (₺)',      hasInput: true, inputLabel: 'İndirim tutarı', inputType: 'tl'  },
+  { value: 'price_round_nearest', label: 'Fiyatı yuvarla (en yakın)',     hasInput: true, inputLabel: 'Yuvarlama adımı', inputType: 'tl' },
+  { value: 'price_round_up',      label: 'Fiyatı yukarı yuvarla',         hasInput: true, inputLabel: 'Yuvarlama adımı', inputType: 'tl' },
+  { value: 'price_round_down',    label: 'Fiyatı aşağı yuvarla',          hasInput: true, inputLabel: 'Yuvarlama adımı', inputType: 'tl' },
   { value: 'sale_price_set_pct',  label: 'İndirimli fiyat oluştur (% indirim)', hasInput: true, inputLabel: 'İndirim yüzdesi', inputType: 'pct' },
   { value: 'sale_price_remove',   label: 'İndirimi kaldır',               hasInput: false, inputLabel: '', inputType: 'pct' },
 ]
@@ -40,6 +43,9 @@ function previewText(type: BulkOpType, value: number, count: number): string {
     case 'price_decrease_pct':    return `${n} ürünün normal fiyatı %${value} indirilecek`
     case 'price_increase_fixed':  return `${n} ürünün normal fiyatına ${value.toLocaleString('tr-TR')} ₺ eklenecek`
     case 'price_decrease_fixed':  return `${n} ürünün normal fiyatından ${value.toLocaleString('tr-TR')} ₺ düşülecek`
+    case 'price_round_up':        return `${n} ürünün fiyatı ${value.toLocaleString('tr-TR')} ₺ üst katına yuvarlanacak (ör. 13.833 → ${(Math.ceil(13833 / (value || 1)) * (value || 1)).toLocaleString('tr-TR')})`
+    case 'price_round_down':      return `${n} ürünün fiyatı ${value.toLocaleString('tr-TR')} ₺ alt katına yuvarlanacak (ör. 13.833 → ${(Math.floor(13833 / (value || 1)) * (value || 1)).toLocaleString('tr-TR')})`
+    case 'price_round_nearest':   return `${n} ürünün fiyatı en yakın ${value.toLocaleString('tr-TR')} ₺'ye yuvarlanacak (ör. 13.833 → ${(Math.round(13833 / (value || 1)) * (value || 1)).toLocaleString('tr-TR')})`
     case 'sale_price_set_pct':    return `${n} ürüne %${value} indirim uygulanacak (indirimli fiyat = fiyat × ${((100 - value) / 100).toFixed(2)})`
     case 'sale_price_remove':     return `${n} ürünün indirimli fiyatı kaldırılacak`
     case 'stock_add':             return `${n} ürünün stoğuna ${value} adet eklenecek`

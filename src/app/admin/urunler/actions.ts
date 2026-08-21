@@ -190,6 +190,9 @@ export type BulkOpType =
   | 'price_decrease_pct'
   | 'price_increase_fixed'
   | 'price_decrease_fixed'
+  | 'price_round_up'
+  | 'price_round_down'
+  | 'price_round_nearest'
   | 'sale_price_set_pct'
   | 'sale_price_remove'
   | 'stock_add'
@@ -201,6 +204,13 @@ export type BulkOpType =
   | 'change_supplier'
 
 type AdminClient = ReturnType<typeof createAdminClient>
+
+function roundStep(value: number, step: number, dir: 'up' | 'down' | 'nearest'): number {
+  if (!step || step <= 0) return value
+  if (dir === 'up') return Math.ceil(value / step) * step
+  if (dir === 'down') return Math.floor(value / step) * step
+  return Math.round(value / step) * step
+}
 
 async function cascadeVariants(
   adminClient: AdminClient,
@@ -224,6 +234,9 @@ async function cascadeVariants(
       case 'price_decrease_pct':  if (vp != null) u.price = Math.max(1, Math.round(vp * (1 - pct))); break
       case 'price_increase_fixed': if (vp != null) u.price = Math.max(1, Math.round(vp + (op.value ?? 0))); break
       case 'price_decrease_fixed': if (vp != null) u.price = Math.max(1, Math.round(vp - (op.value ?? 0))); break
+      case 'price_round_up':      if (vp != null) u.price = Math.max(1, roundStep(vp, op.value ?? 0, 'up')); break
+      case 'price_round_down':    if (vp != null) u.price = Math.max(1, roundStep(vp, op.value ?? 0, 'down')); break
+      case 'price_round_nearest': if (vp != null) u.price = Math.max(1, roundStep(vp, op.value ?? 0, 'nearest')); break
       case 'sale_price_set_pct':  if (vp != null) u.sale_price = Math.max(1, Math.round(vp * (1 - pct))); break
       case 'sale_price_remove':   u.sale_price = null; break
       case 'stock_add':      u.stock = vs + (op.value ?? 0); break
@@ -259,6 +272,9 @@ async function cascadeComponents(
       case 'price_decrease_pct':   u.unit_price = Math.max(1, Math.round(cp * (1 - pct))); break
       case 'price_increase_fixed': u.unit_price = Math.max(1, Math.round(cp + (op.value ?? 0))); break
       case 'price_decrease_fixed': u.unit_price = Math.max(1, Math.round(cp - (op.value ?? 0))); break
+      case 'price_round_up':      u.unit_price = Math.max(1, roundStep(cp, op.value ?? 0, 'up')); break
+      case 'price_round_down':    u.unit_price = Math.max(1, roundStep(cp, op.value ?? 0, 'down')); break
+      case 'price_round_nearest': u.unit_price = Math.max(1, roundStep(cp, op.value ?? 0, 'nearest')); break
       // sale_price ops → parçalarda geçerli değil
       case 'stock_add':      u.stock = cs + (op.value ?? 0); break
       case 'stock_subtract': u.stock = Math.max(0, cs - (op.value ?? 0)); break
@@ -343,6 +359,15 @@ export async function bulkOperateProducts(
           break
         case 'stock_subtract':
           upd.stock = Math.max(0, p.stock - (operation.value ?? 0))
+          break
+        case 'price_round_up':
+          upd.price = Math.max(1, roundStep(p.price, operation.value ?? 0, 'up'))
+          break
+        case 'price_round_down':
+          upd.price = Math.max(1, roundStep(p.price, operation.value ?? 0, 'down'))
+          break
+        case 'price_round_nearest':
+          upd.price = Math.max(1, roundStep(p.price, operation.value ?? 0, 'nearest'))
           break
       }
 
