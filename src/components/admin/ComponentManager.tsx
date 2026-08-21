@@ -22,6 +22,8 @@ interface Props {
 interface FormState {
   name: string
   unit_price: string
+  cost_price: string
+  profit_pct: string
   included_by_default: boolean
   min_quantity: string
   max_quantity: string
@@ -34,6 +36,8 @@ interface FormState {
 const emptyForm = (sortOrder: number): FormState => ({
   name: '',
   unit_price: '0',
+  cost_price: '',
+  profit_pct: '',
   included_by_default: true,
   min_quantity: '0',
   max_quantity: '1',
@@ -46,6 +50,8 @@ const emptyForm = (sortOrder: number): FormState => ({
 const toFormState = (c: ProductComponent): FormState => ({
   name: c.name,
   unit_price: String(c.unit_price),
+  cost_price: c.cost_price != null ? String(c.cost_price) : '',
+  profit_pct: (c.cost_price && c.cost_price > 0) ? String(Math.round(((c.unit_price / c.cost_price) - 1) * 100)) : '',
   included_by_default: c.default_quantity > 0,
   min_quantity: String(c.min_quantity),
   max_quantity: String(c.max_quantity),
@@ -54,6 +60,14 @@ const toFormState = (c: ProductComponent): FormState => ({
   is_active: c.is_active,
   image_url: c.image_url ?? '',
 })
+
+const computeUnitPrice = (cost: string, pct: string): string | null => {
+  const c = Number(cost); const p = Number(pct)
+  if (cost !== '' && pct !== '' && !Number.isNaN(c) && !Number.isNaN(p) && c > 0 && p >= 0) {
+    return String(Math.round(c * (1 + p / 100)))
+  }
+  return null
+}
 
 export default function ComponentManager({ productId, components, templates = [], categories = [] }: Props) {
   const router = useRouter()
@@ -141,6 +155,7 @@ export default function ComponentManager({ productId, components, templates = []
       await saveComponent(productId, editingId, {
         name: form.name.trim(),
         unit_price: Number(form.unit_price) || 0,
+        cost_price: form.cost_price ? Number(form.cost_price) : null,
         default_quantity: defaultQty,
         min_quantity: minQty,
         max_quantity: maxQty,
@@ -390,6 +405,20 @@ function ComponentForm({
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="örn. Komodin"
         />
+      </div>
+
+      {/* Alış fiyatı + kâr % → birim fiyatı otomatik hesaplar */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>Alış Fiyatı (₺)</Label>
+          <Input type="number" min={0} placeholder="Opsiyonel" value={form.cost_price}
+            onChange={(e) => { const up = computeUnitPrice(e.target.value, form.profit_pct); setForm({ ...form, cost_price: e.target.value, ...(up != null ? { unit_price: up } : {}) }) }} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Kâr %</Label>
+          <Input type="number" min={0} placeholder="örn. 40" value={form.profit_pct}
+            onChange={(e) => { const up = computeUnitPrice(form.cost_price, e.target.value); setForm({ ...form, profit_pct: e.target.value, ...(up != null ? { unit_price: up } : {}) }) }} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

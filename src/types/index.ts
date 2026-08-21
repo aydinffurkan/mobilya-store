@@ -151,6 +151,7 @@ export interface ProductComponent {
   product_id: string
   name: string
   unit_price: number
+  cost_price: number | null
   default_quantity: number
   min_quantity: number
   max_quantity: number

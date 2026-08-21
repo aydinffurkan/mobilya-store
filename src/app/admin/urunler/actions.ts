@@ -422,6 +422,7 @@ export async function deleteVariant(variantId: string) {
 interface ComponentPayload {
   name: string
   unit_price: number
+  cost_price?: number | null
   default_quantity: number
   min_quantity: number
   max_quantity: number
@@ -436,15 +437,23 @@ export async function saveComponent(productId: string, componentId: string | nul
   const adminClient = createAdminClient()
 
   if (componentId) {
-    const { error } = await adminClient
+    let { error } = await adminClient
       .from('product_components')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', componentId)
+    if (error && /cost_price/.test(error.message)) {
+      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+      ;({ error } = await adminClient.from('product_components').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', componentId))
+    }
     if (error) throw new Error(error.message)
   } else {
-    const { error } = await adminClient
+    let { error } = await adminClient
       .from('product_components')
       .insert({ ...payload, product_id: productId, created_at: new Date().toISOString() })
+    if (error && /cost_price/.test(error.message)) {
+      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+      ;({ error } = await adminClient.from('product_components').insert({ ...rest, product_id: productId, created_at: new Date().toISOString() }))
+    }
     if (error) throw new Error(error.message)
   }
 
