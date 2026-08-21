@@ -57,6 +57,7 @@ export interface Product {
   description: string | null
   price: number
   sale_price: number | null
+  cost_price: number | null
   category_id: string
   category?: Category
   supplier_id: string | null

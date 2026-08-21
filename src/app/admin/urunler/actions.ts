@@ -11,6 +11,7 @@ interface ProductPayload {
   description?: string
   price: number
   sale_price?: number | null
+  cost_price?: number | null
   category_id?: string | null
   supplier_id?: string | null
   stock: number

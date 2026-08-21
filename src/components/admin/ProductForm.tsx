@@ -27,6 +27,7 @@ const schema = z.object({
   slug:        z.string().min(2, 'Slug en az 2 karakter'),
   description: z.string().optional(),
   price:       z.coerce.number().min(1, 'Fiyat giriniz'),
+  cost_price:  z.coerce.number().optional(),
   sale_price:       z.coerce.number().optional(),
   category_id: z.string().min(1, 'Kategori seçiniz'),
   supplier_id: z.string().optional(),
@@ -249,13 +250,14 @@ export default function ProductForm({
   }
 
   // ── Form ─────────────────────────────────────────────────────────────────
-  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = useForm<FormData>({
     resolver: standardSchemaResolver(schema),
     defaultValues: {
       name:        product?.name        ?? '',
       slug:        product?.slug        ?? '',
       description: product?.description ?? '',
       price:       product?.price       ?? 0,
+      cost_price:  product?.cost_price  ?? undefined,
       sale_price:       product?.sale_price       ?? undefined,
       category_id: product?.category_id ?? '',
       supplier_id: product?.supplier_id ?? '',
@@ -267,6 +269,20 @@ export default function ProductForm({
     },
   })
 
+  const [profitPct, setProfitPct] = useState<string>(() => {
+    if (product?.cost_price && product?.price && product.cost_price > 0) {
+      return String(Math.round(((product.price / product.cost_price) - 1) * 100))
+    }
+    return ''
+  })
+
+  const recomputePrice = (cost: unknown, pct: unknown) => {
+    const c = Number(cost); const p = Number(pct)
+    if (cost !== '' && pct !== '' && !Number.isNaN(c) && !Number.isNaN(p) && c > 0 && p >= 0) {
+      setValue('price', Math.round(c * (1 + p / 100)), { shouldValidate: true })
+    }
+  }
+
   const autoSlug = (name: string) =>
     name.toLowerCase()
       .replace(/ç/g,'c').replace(/ş/g,'s').replace(/ı/g,'i')
@@ -277,6 +293,7 @@ export default function ProductForm({
     const payload = {
       ...data,
       sale_price:            data.sale_price || null,
+      cost_price:            data.cost_price || null,
       installment_count:     data.installment_count || null,
       supplier_id:           data.supplier_id || null,
       cart_discount_percent: cartDiscountPct,
@@ -398,9 +415,24 @@ export default function ProductForm({
               />
             </div>
 
+            {/* Alış fiyatı + kâr % → satış fiyatını otomatik hesaplar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="price">Fiyat (₺) *</Label>
+                <Label htmlFor="cost_price">Alış Fiyatı (₺)</Label>
+                <Input id="cost_price" type="number" min={0} placeholder="Opsiyonel"
+                  {...register('cost_price')}
+                  onChange={(e) => { register('cost_price').onChange(e); recomputePrice(e.target.value, profitPct) }} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="profit_pct">Kâr % <span className="text-xs text-muted-foreground font-normal">(satış fiyatını hesaplar)</span></Label>
+                <Input id="profit_pct" type="number" min={0} placeholder="örn. 40" value={profitPct}
+                  onChange={(e) => { setProfitPct(e.target.value); recomputePrice(watch('cost_price'), e.target.value) }} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="price">Satış Fiyatı (₺) *</Label>
                 <Input id="price" type="number" {...register('price')} min={0} />
                 {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
               </div>
