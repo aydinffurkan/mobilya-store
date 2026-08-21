@@ -235,22 +235,22 @@ export default function ProductAccordion({
           {/* Boyutlar */}
           {activeTab === 'boyutlar' && (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[300px]">
+              <table className="w-full text-xs min-w-[420px]">
                 <thead>
                   <tr className="border-b border-neutral-100">
-                    <th className="text-left pb-2.5 font-semibold text-neutral-500 uppercase tracking-wider"></th>
-                    <th className="text-center pb-2.5 font-semibold text-neutral-500 uppercase tracking-wider">Genişlik</th>
-                    <th className="text-center pb-2.5 font-semibold text-neutral-500 uppercase tracking-wider">Derinlik</th>
-                    <th className="text-center pb-2.5 font-semibold text-neutral-500 uppercase tracking-wider">Yükseklik</th>
+                    <th className="text-left pb-2.5 pr-3 font-semibold text-neutral-500 uppercase tracking-wider"></th>
+                    <th className="text-center pb-2.5 px-3 font-semibold text-neutral-500 uppercase tracking-wider">Genişlik</th>
+                    <th className="text-center pb-2.5 px-3 font-semibold text-neutral-500 uppercase tracking-wider">Derinlik</th>
+                    <th className="text-center pb-2.5 pl-3 font-semibold text-neutral-500 uppercase tracking-wider">Yükseklik</th>
                   </tr>
                 </thead>
                 <tbody>
                   {product.dimensions!.map((dim, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-neutral-50/80' : 'bg-white'}>
-                      <td className="py-2.5 font-semibold text-neutral-700 uppercase tracking-wide">{dim.name}</td>
-                      <td className="py-2.5 text-center font-light text-[#222222]">{dim.width}</td>
-                      <td className="py-2.5 text-center font-light text-[#222222]">{dim.depth}</td>
-                      <td className="py-2.5 text-center font-light text-neutral-500">{dim.height}</td>
+                      <td className="py-2.5 pr-3 font-semibold text-neutral-700 uppercase tracking-wide">{dim.name}</td>
+                      <td className="py-2.5 px-3 text-center font-light text-[#222222]">{dim.width}</td>
+                      <td className="py-2.5 px-3 text-center font-light text-[#222222]">{dim.depth}</td>
+                      <td className="py-2.5 pl-3 text-center font-light text-neutral-500">{dim.height}</td>
                     </tr>
                   ))}
                 </tbody>
