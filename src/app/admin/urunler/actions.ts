@@ -32,18 +32,27 @@ export async function saveProduct(productId: string | null, payload: ProductPayl
   let id = productId
 
   if (productId) {
-    const { error } = await adminClient
+    let { error } = await adminClient
       .from('products')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', productId)
+    if (error && /cost_price/.test(error.message)) {
+      // cost_price kolonu henüz eklenmemişse (migration bekliyor) onsuz kaydet
+      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+      ;({ error } = await adminClient.from('products').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', productId))
+    }
     if (error) throw new Error(error.message)
   } else {
-    const { data, error } = await adminClient
+    let { data, error } = await adminClient
       .from('products')
       .insert({ ...payload, created_at: new Date().toISOString() })
       .select('id')
       .single()
-    if (error) throw new Error(error.message)
+    if (error && /cost_price/.test(error.message)) {
+      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+      ;({ data, error } = await adminClient.from('products').insert({ ...rest, created_at: new Date().toISOString() }).select('id').single())
+    }
+    if (error || !data) throw new Error(error?.message ?? 'Ürün oluşturulamadı')
     id = data.id
 
     // Ürün eklerken staged seçenekleri (varyantları) da yaz
