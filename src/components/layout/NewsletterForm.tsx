@@ -35,7 +35,7 @@ export default function NewsletterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2.5 max-w-sm">
+    <form onSubmit={handleSubmit} className="space-y-2.5 w-full sm:max-w-sm">
       <div className="flex gap-2">
         <input
           type="email"
