@@ -35,7 +35,8 @@ export default function ProductAccordion({
     [product.components]
   )
 
-  const hasComponents    = activeComponents.length > 0
+  const hasComponents       = activeComponents.length > 0
+  const hasComponentImages  = activeComponents.some((c) => !!c.image_url)
   const hasFeaturedSpecs = (product.featured_specs ?? []).length > 0
   const hasSpecs         = (product.specs ?? []).length > 0
   const hasDimensions    = (product.dimensions ?? []).length > 0
@@ -117,7 +118,7 @@ export default function ProductAccordion({
             <table className="w-full text-xs min-w-[480px]">
               <thead>
                 <tr className="border-b border-neutral-100 text-neutral-400 font-semibold uppercase tracking-wider">
-                  <th className="text-left pb-3 pr-3 w-14">Görsel</th>
+                  {hasComponentImages && <th className="text-left pb-3 pr-3 w-14">Görsel</th>}
                   <th className="text-left pb-3 pr-4">Parçalar</th>
                   <th className="text-right pb-3 px-4 whitespace-nowrap">Birim Fiyat</th>
                   <th className="text-center pb-3 px-4">Adet</th>
@@ -131,15 +132,15 @@ export default function ProductAccordion({
                   const lineTotal = qty * component.unit_price
                   return (
                     <tr key={component.id} className="border-b border-neutral-50 last:border-0">
-                      <td className="py-3.5 pr-3">
-                        {component.image_url ? (
-                          <div className="w-12 h-12 rounded-lg overflow-hidden relative bg-neutral-100 border border-neutral-200">
-                            <Image src={component.image_url} alt={component.name} fill className="object-cover" sizes="48px" />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-neutral-100 border border-neutral-200 border-dashed" />
-                        )}
-                      </td>
+                      {hasComponentImages && (
+                        <td className="py-3.5 pr-3">
+                          {component.image_url && (
+                            <div className="w-12 h-12 rounded-lg overflow-hidden relative bg-neutral-100 border border-neutral-200">
+                              <Image src={component.image_url} alt={component.name} fill className="object-cover" sizes="48px" />
+                            </div>
+                          )}
+                        </td>
+                      )}
                       <td className="py-3.5 pr-4">
                         <span className="text-neutral-700 font-light leading-snug">{component.name}</span>
                       </td>
@@ -175,7 +176,7 @@ export default function ProductAccordion({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-neutral-200">
-                  <td colSpan={4} className="pt-3.5 pr-4 text-xs font-semibold text-neutral-700 uppercase tracking-wider">Toplam</td>
+                  <td colSpan={hasComponentImages ? 4 : 3} className="pt-3.5 pr-4 text-xs font-semibold text-neutral-700 uppercase tracking-wider">Toplam</td>
                   <td className="pt-3.5 pl-4 text-right text-sm font-bold text-neutral-900 tabular-nums whitespace-nowrap">
                     {activeComponents.reduce((sum, c) => sum + (componentQuantities[c.id] ?? c.default_quantity) * c.unit_price, 0).toLocaleString('tr-TR')} ₺
                   </td>
