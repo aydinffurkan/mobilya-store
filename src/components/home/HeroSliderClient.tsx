@@ -52,9 +52,13 @@ export default function HeroSliderClient({ slides }: Props) {
       {/* Slider track — her slayt doğal görsel yüksekliğini alır */}
       <div
         className="flex transition-transform duration-700 ease-in-out"
-        style={{ transform: `translateX(-${index * 100}%)` }}
+        style={{ transform: `translateX(-${index * 100}%)`, willChange: 'transform' }}
       >
         {slides.map((slide, i) => {
+          // Aktif slayt + bir sonraki slayt önden (priority) yüklenir; aksi
+          // halde otomatik geçişte görsel henüz inmemiş olur ve akış "takılıyor"
+          // gibi görünür (geçiş anında görsel aniden belirir).
+          const isPriority = i === 0 || i === index || i === (index + 1) % count
           const imgEl = slide.image_url ? (
             <Image
               src={slide.image_url}
@@ -63,7 +67,8 @@ export default function HeroSliderClient({ slides }: Props) {
               height={0}
               sizes="100vw"
               className="w-full h-auto block pointer-events-none select-none"
-              priority={i === 0}
+              priority={isPriority}
+              loading={isPriority ? undefined : 'lazy'}
               draggable={false}
             />
           ) : (
