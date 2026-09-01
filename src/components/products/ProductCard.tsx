@@ -168,7 +168,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 alt={`${product.name} — ${i + 1}`}
                 fill
                 quality={95}
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"
                 sizes="(max-width: 640px) 50vw, 33vw"
                 loading={i === 0 ? 'eager' : 'lazy'}
               />
