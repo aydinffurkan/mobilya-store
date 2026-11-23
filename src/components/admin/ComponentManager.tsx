@@ -34,6 +34,9 @@ interface FormState {
   sort_order: string
   is_active: boolean
   images: string[]
+  dim_width: string
+  dim_depth: string
+  dim_height: string
 }
 
 const emptyForm = (sortOrder: number): FormState => ({
@@ -48,6 +51,9 @@ const emptyForm = (sortOrder: number): FormState => ({
   sort_order: String(sortOrder),
   is_active: true,
   images: [],
+  dim_width: '',
+  dim_depth: '',
+  dim_height: '',
 })
 
 const toFormState = (c: ProductComponent): FormState => ({
@@ -62,6 +68,9 @@ const toFormState = (c: ProductComponent): FormState => ({
   sort_order: String(c.sort_order),
   is_active: c.is_active,
   images: getComponentImages(c),
+  dim_width: c.dim_width ?? '',
+  dim_depth: c.dim_depth ?? '',
+  dim_height: c.dim_height ?? '',
 })
 
 const computeUnitPrice = (cost: string, pct: string): string | null => {
@@ -166,6 +175,9 @@ export default function ComponentManager({ productId, productImages = [], compon
         sort_order: Number(form.sort_order) || 0,
         is_active: form.is_active,
         images: form.images,
+        dim_width: form.dim_width.trim() || null,
+        dim_depth: form.dim_depth.trim() || null,
+        dim_height: form.dim_height.trim() || null,
       })
       toast.success(editingId ? 'Parça güncellendi' : 'Parça eklendi')
       cancel()
@@ -516,6 +528,18 @@ function ComponentForm({
           <Label>Sıra</Label>
           <Input type="number" min={0} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Ölçüler</Label>
+        <div className="grid grid-cols-3 gap-3">
+          <Input value={form.dim_width} onChange={(e) => setForm({ ...form, dim_width: e.target.value })} placeholder="Genişlik (160 cm)" />
+          <Input value={form.dim_depth} onChange={(e) => setForm({ ...form, dim_depth: e.target.value })} placeholder="Derinlik (200 cm)" />
+          <Input value={form.dim_height} onChange={(e) => setForm({ ...form, dim_height: e.target.value })} placeholder="Yükseklik (28 cm)" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Ürün Boyutları tablosunda &quot;Parçalardan Doldur&quot; ile çekilir; parçadan ayrı ürün oluşturunca yeni ürüne otomatik yazılır.
+        </p>
       </div>
 
       <p className="text-xs text-muted-foreground">

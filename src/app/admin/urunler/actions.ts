@@ -460,6 +460,9 @@ interface ComponentPayload {
   sort_order: number
   image_url?: string | null
   images?: string[]
+  dim_width?: string | null
+  dim_depth?: string | null
+  dim_height?: string | null
 }
 
 export async function saveComponent(productId: string, componentId: string | null, payload: ComponentPayload) {
@@ -477,6 +480,9 @@ export async function saveComponent(productId: string, componentId: string | nul
     let changed = false
     if (/cost_price/.test(message)) { delete rest.cost_price; changed = true }
     if (/\bimages\b/.test(message)) { delete rest.images; changed = true }
+    if (/dim_(width|depth|height)/.test(message)) {
+      delete rest.dim_width; delete rest.dim_depth; delete rest.dim_height; changed = true
+    }
     return changed ? rest : null
   }
 
@@ -503,6 +509,27 @@ export async function saveComponent(productId: string, componentId: string | nul
 
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
+}
+
+/** Başka üründen ölçü / özellik kopyalamak için ürün arama */
+export async function searchProductsForCopy(
+  query: string,
+  kind: 'dimensions' | 'specs',
+  excludeId?: string
+): Promise<{ id: string; name: string; items: unknown[] }[]> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+  const q = query.trim().replace(/[%,()]/g, ' ')
+
+  let req = adminClient.from('products').select(`id, name, ${kind}`).limit(8).order('updated_at', { ascending: false })
+  if (q) req = req.ilike('name', `%${q}%`)
+  if (excludeId) req = req.neq('id', excludeId)
+  const { data, error } = await req
+  if (error) throw new Error(error.message)
+
+  return ((data ?? []) as unknown as Record<string, unknown>[])
+    .map((p) => ({ id: p.id as string, name: p.name as string, items: (p[kind] as unknown[] | null) ?? [] }))
+    .filter((p) => p.items.length > 0)
 }
 
 export async function deleteComponent(componentId: string) {
@@ -704,7 +731,7 @@ export async function createProductFromComponent(componentId: string, categoryId
   if (!comp) throw new Error('Parça bulunamadı')
 
   // Ürün adının başına bağlı olduğu takım ürününün ilk kelimesini ekle
-  const { data: parent } = await adminClient.from('products').select('name').eq('id', comp.product_id).single()
+  const { data: parent } = await adminClient.from('products').select('name, specs, featured_specs').eq('id', comp.product_id).single()
   const firstWord = (parent?.name ?? '').trim().split(/\s+/)[0] ?? ''
   const finalName = firstWord ? `${firstWord} ${comp.name}` : comp.name
 
@@ -725,6 +752,12 @@ export async function createProductFromComponent(componentId: string, categoryId
       category_id: categoryId,
       stock: comp.stock ?? 0,
       images: comp.images?.length ? comp.images : comp.image_url ? [comp.image_url] : [],
+      // Özellikler ana üründen miras alınır; ölçü parçanın kendi ölçüsüdür
+      specs: parent?.specs ?? [],
+      featured_specs: parent?.featured_specs ?? [],
+      dimensions: (comp.dim_width || comp.dim_depth || comp.dim_height)
+        ? [{ name: comp.name, width: comp.dim_width ?? '', depth: comp.dim_depth ?? '', height: comp.dim_height ?? '' }]
+        : [],
       is_active: true,
       created_at: new Date().toISOString(),
     })

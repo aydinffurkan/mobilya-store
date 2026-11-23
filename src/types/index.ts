@@ -160,6 +160,9 @@ export interface ProductComponent {
   sort_order: number
   image_url?: string | null
   images?: string[] | null
+  dim_width?: string | null
+  dim_depth?: string | null
+  dim_height?: string | null
   created_at: string
   updated_at: string
 }

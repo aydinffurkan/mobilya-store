@@ -14,6 +14,7 @@ import { saveProduct, saveProductDetailFields } from '@/app/admin/urunler/action
 import VariantManager from '@/components/admin/VariantManager'
 import GroupManager from '@/components/admin/GroupManager'
 import ComponentManager from '@/components/admin/ComponentManager'
+import CopyFromProduct from '@/components/admin/CopyFromProduct'
 import {
   Category, Product, ProductSpec, ProductDimension, FAQItem,
   VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate, Supplier, ProductVariant,
@@ -225,6 +226,38 @@ export default function ProductForm({
   const updateDimension = (i: number, field: keyof ProductDimension, val: string) =>
     setDimensions((p) => p.map((d, idx) => idx === i ? { ...d, [field]: val } : d))
   const removeDimension = (i: number) => setDimensions((p) => p.filter((_, idx) => idx !== i))
+
+  // Başka üründen kopyalama: replace = değiştir, append = aynı adlı satırları atlayarak ekle
+  const applyCopiedSpecs = (items: ProductSpec[], mode: 'replace' | 'append') =>
+    setSpecs((prev) => {
+      if (mode === 'replace') return items
+      const have = new Set(prev.map((s) => s.key.trim().toLowerCase()))
+      return [...prev, ...items.filter((s) => !have.has(s.key.trim().toLowerCase()))]
+    })
+  const applyCopiedDimensions = (items: ProductDimension[], mode: 'replace' | 'append') =>
+    setDimensions((prev) => {
+      if (mode === 'replace') return items
+      const have = new Set(prev.map((d) => d.name.trim().toLowerCase()))
+      return [...prev, ...items.filter((d) => !have.has(d.name.trim().toLowerCase()))]
+    })
+
+  // Parçalardaki ölçüleri tabloya çek: aynı adlı satır güncellenir, yoksa eklenir
+  const componentsWithDims = (product?.components ?? []).filter(
+    (c) => c.is_active && (c.dim_width || c.dim_depth || c.dim_height)
+  )
+  const fillDimensionsFromComponents = () => {
+    setDimensions((prev) => {
+      const next = [...prev]
+      for (const c of componentsWithDims) {
+        const row: ProductDimension = { name: c.name, width: c.dim_width ?? '', depth: c.dim_depth ?? '', height: c.dim_height ?? '' }
+        const idx = next.findIndex((d) => d.name.trim().toLowerCase() === c.name.trim().toLowerCase())
+        if (idx >= 0) next[idx] = row
+        else next.push(row)
+      }
+      return next
+    })
+    toast.success(`${componentsWithDims.length} parçanın ölçüsü tabloya işlendi`)
+  }
 
   const addFaq    = () => setFaqItems((p) => [...p, { q: '', a: '' }])
   const updateFaq = (i: number, field: keyof FAQItem, val: string) =>
@@ -745,6 +778,7 @@ export default function ProductForm({
                 </select>
               )}
             </div>
+            <CopyFromProduct<ProductSpec> kind="specs" excludeId={product?.id} onApply={applyCopiedSpecs} />
             {specs.length > 0 && (
               <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm min-w-[480px]">
@@ -802,6 +836,20 @@ export default function ProductForm({
                   {dimensionTemplates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               )}
+            </div>
+            <div className="flex flex-wrap items-start gap-2">
+              {componentsWithDims.length > 0 && (
+                <button
+                  type="button"
+                  onClick={fillDimensionsFromComponents}
+                  className="inline-flex items-center gap-1.5 text-xs border border-border rounded-lg px-2.5 py-1.5 bg-background text-muted-foreground hover:text-foreground"
+                >
+                  Parçalardan Doldur ({componentsWithDims.length})
+                </button>
+              )}
+              <div className="flex-1 min-w-[200px]">
+                <CopyFromProduct<ProductDimension> kind="dimensions" excludeId={product?.id} onApply={applyCopiedDimensions} />
+              </div>
             </div>
             {dimensions.length > 0 && (
               <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
