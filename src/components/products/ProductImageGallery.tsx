@@ -7,11 +7,13 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 interface Props {
   images: string[]
   name: string
+  /** Dışarıdan belirli bir görsele atlatmak için; n her istekte artar */
+  focus?: { url: string; n: number } | null
 }
 
 const THUMB_VISIBLE = 4
 
-export default function ProductImageGallery({ images, name }: Props) {
+export default function ProductImageGallery({ images, name, focus }: Props) {
   const [selected, setSelected]     = useState(0)
   const [thumbStart, setThumbStart] = useState(0)
   const [modalOpen, setModalOpen]   = useState(false)
@@ -40,6 +42,16 @@ export default function ProductImageGallery({ images, name }: Props) {
     if (i < thumbStart) setThumbStart(i)
     if (i >= thumbStart + THUMB_VISIBLE) setThumbStart(i - THUMB_VISIBLE + 1)
   }
+
+  useEffect(() => {
+    if (!focus) return
+    const idx = images.indexOf(focus.url)
+    if (idx >= 0) {
+      setSelected(idx)
+      setThumbStart((s) => (idx < s ? idx : idx >= s + THUMB_VISIBLE ? idx - THUMB_VISIBLE + 1 : s))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.n])
 
   useEffect(() => {
     document.body.style.overflow = modalOpen ? 'hidden' : 'unset'

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Check, Minus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Product, ProductComponent } from '@/types'
+import { getComponentImages } from '@/lib/componentImages'
 
 const INSTALLMENTS = [
   { bank: 'Tüm Kartlar',   months: 3,  note: 'Peşin fiyatına'        },
@@ -19,6 +20,8 @@ interface Props {
   componentQuantities: Record<string, number>
   onComponentChange: (id: string, qty: number) => void
   changeRequest: number
+  /** Parça görseline/adına tıklanınca ana galeriyi o görsele atlatır */
+  onShowImage?: (url: string) => void
 }
 
 export default function ProductAccordion({
@@ -26,6 +29,7 @@ export default function ProductAccordion({
   componentQuantities,
   onComponentChange,
   changeRequest,
+  onShowImage,
 }: Props) {
   const activeComponents = useMemo(
     () =>
@@ -36,7 +40,7 @@ export default function ProductAccordion({
   )
 
   const hasComponents       = activeComponents.length > 0
-  const hasComponentImages  = activeComponents.some((c) => !!c.image_url)
+  const hasComponentImages  = activeComponents.some((c) => getComponentImages(c).length > 0)
   const hasFeaturedSpecs = (product.featured_specs ?? []).length > 0
   const hasSpecs         = (product.specs ?? []).length > 0
   const hasDimensions    = (product.dimensions ?? []).length > 0
@@ -130,19 +134,37 @@ export default function ProductAccordion({
                   const qty       = componentQuantities[component.id] ?? component.default_quantity
                   const isAdded   = qty > 0
                   const lineTotal = qty * component.unit_price
+                  const compImages = getComponentImages(component)
+                  const showImage = () => { if (compImages[0]) onShowImage?.(compImages[0]) }
                   return (
                     <tr key={component.id} className="border-b border-neutral-50 last:border-0">
                       {hasComponentImages && (
                         <td className="py-3.5 pr-3">
-                          {component.image_url && (
-                            <div className="w-12 h-12 rounded-lg overflow-hidden relative bg-neutral-100 border border-neutral-200">
-                              <Image src={component.image_url} alt={component.name} fill className="object-cover" sizes="48px" />
-                            </div>
+                          {compImages.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={showImage}
+                              aria-label={`${component.name} görselini göster`}
+                              className="block w-12 h-12 rounded-lg overflow-hidden relative bg-neutral-100 border border-neutral-200 hover:border-neutral-400 transition-colors"
+                            >
+                              <Image src={compImages[0]} alt={component.name} fill className="object-cover" sizes="48px" />
+                              {compImages.length > 1 && (
+                                <span className="absolute bottom-0 right-0 bg-black/65 text-white text-[9px] leading-none px-1 py-0.5 rounded-tl">
+                                  +{compImages.length - 1}
+                                </span>
+                              )}
+                            </button>
                           )}
                         </td>
                       )}
                       <td className="py-3.5 pr-4">
-                        <span className="text-neutral-700 font-light leading-snug">{component.name}</span>
+                        {compImages.length > 0 ? (
+                          <button type="button" onClick={showImage} className="text-left text-neutral-700 font-light leading-snug hover:underline">
+                            {component.name}
+                          </button>
+                        ) : (
+                          <span className="text-neutral-700 font-light leading-snug">{component.name}</span>
+                        )}
                       </td>
                       <td className="py-3.5 text-right px-4 text-neutral-500 font-light tabular-nums whitespace-nowrap">
                         {component.unit_price.toLocaleString('tr-TR')} ₺

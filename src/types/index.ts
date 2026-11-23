@@ -159,6 +159,7 @@ export interface ProductComponent {
   is_active: boolean
   sort_order: number
   image_url?: string | null
+  images?: string[] | null
   created_at: string
   updated_at: string
 }

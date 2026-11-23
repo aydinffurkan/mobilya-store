@@ -9,11 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { saveComponent, deleteComponent, applyComponentTemplate, createProductFromComponent } from '@/app/admin/urunler/actions'
 import { ProductComponent, ComponentTemplate } from '@/types'
-import { Plus, Pencil, Trash2, Loader2, Wand2, ImagePlus, X as XIcon, PackagePlus } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, Wand2, ImagePlus, X as XIcon, PackagePlus, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getComponentImages } from '@/lib/componentImages'
 
 interface Props {
   productId: string
+  /** Ana ürün galerisi — parça görselleri buradan seçilir */
+  productImages?: string[]
   components: ProductComponent[]
   templates?: ComponentTemplate[]
   categories?: { id: string; name: string }[]
@@ -30,7 +33,7 @@ interface FormState {
   stock: string
   sort_order: string
   is_active: boolean
-  image_url: string
+  images: string[]
 }
 
 const emptyForm = (sortOrder: number): FormState => ({
@@ -44,7 +47,7 @@ const emptyForm = (sortOrder: number): FormState => ({
   stock: '0',
   sort_order: String(sortOrder),
   is_active: true,
-  image_url: '',
+  images: [],
 })
 
 const toFormState = (c: ProductComponent): FormState => ({
@@ -58,7 +61,7 @@ const toFormState = (c: ProductComponent): FormState => ({
   stock: String(c.stock),
   sort_order: String(c.sort_order),
   is_active: c.is_active,
-  image_url: c.image_url ?? '',
+  images: getComponentImages(c),
 })
 
 const computeUnitPrice = (cost: string, pct: string): string | null => {
@@ -69,7 +72,7 @@ const computeUnitPrice = (cost: string, pct: string): string | null => {
   return null
 }
 
-export default function ComponentManager({ productId, components, templates = [], categories = [] }: Props) {
+export default function ComponentManager({ productId, productImages = [], components, templates = [], categories = [] }: Props) {
   const router = useRouter()
   const [spawnId, setSpawnId] = useState<string | null>(null)
   const [spawnCat, setSpawnCat] = useState('')
@@ -162,7 +165,7 @@ export default function ComponentManager({ productId, components, templates = []
         stock: Number(form.stock) || 0,
         sort_order: Number(form.sort_order) || 0,
         is_active: form.is_active,
-        image_url: form.image_url || null,
+        images: form.images,
       })
       toast.success(editingId ? 'Parça güncellendi' : 'Parça eklendi')
       cancel()
@@ -238,16 +241,23 @@ export default function ComponentManager({ productId, components, templates = []
       )}
 
       <div className="space-y-2">
-        {components.map((component) => (
+        {components.map((component) => {
+          const compImages = getComponentImages(component)
+          return (
           <div key={component.id}>
             {editingId === component.id && form ? (
-              <ComponentForm form={form} setForm={setForm} onSave={handleSave} onCancel={cancel} saving={saving} />
+              <ComponentForm form={form} setForm={setForm} onSave={handleSave} onCancel={cancel} saving={saving} productImages={productImages} />
             ) : (
               <div className="flex items-center justify-between gap-3 border border-border rounded-xl px-4 py-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  {component.image_url ? (
+                  {compImages.length > 0 ? (
                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative border border-border">
-                      <Image src={component.image_url} alt={component.name} fill className="object-cover" />
+                      <Image src={compImages[0]} alt={component.name} fill className="object-cover" sizes="40px" />
+                      {compImages.length > 1 && (
+                        <span className="absolute bottom-0 right-0 bg-black/65 text-white text-[9px] leading-none px-1 py-0.5 rounded-tl">
+                          +{compImages.length - 1}
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center border border-border border-dashed">
@@ -310,10 +320,11 @@ export default function ComponentManager({ productId, components, templates = []
               </div>
             )}
           </div>
-        ))}
+          )
+        })}
 
         {adding && form && (
-          <ComponentForm form={form} setForm={setForm} onSave={handleSave} onCancel={cancel} saving={saving} />
+          <ComponentForm form={form} setForm={setForm} onSave={handleSave} onCancel={cancel} saving={saving} productImages={productImages} />
         )}
       </div>
     </div>
@@ -326,27 +337,33 @@ function ComponentForm({
   onSave,
   onCancel,
   saving,
+  productImages,
 }: {
   form: FormState
   setForm: (f: FormState) => void
   onSave: () => void
   onCancel: () => void
   saving: boolean
+  productImages: string[]
 }) {
   const [uploading, setUploading] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
     setUploading(true)
     try {
       const supabase = createClient()
-      const ext = file.name.split('.').pop()
-      const path = `component-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { data, error } = await supabase.storage.from('product-images').upload(path, file)
-      if (error) throw error
-      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(data.path)
-      setForm({ ...form, image_url: urlData.publicUrl })
+      const urls: string[] = []
+      for (const file of files) {
+        const ext = file.name.split('.').pop()
+        const path = `component-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { data, error } = await supabase.storage.from('product-images').upload(path, file)
+        if (error) throw error
+        urls.push(supabase.storage.from('product-images').getPublicUrl(data.path).data.publicUrl)
+      }
+      setForm({ ...form, images: [...form.images, ...urls.filter((u) => !form.images.includes(u))] })
     } catch (e: any) {
       toast.error('Görsel yüklenemedi: ' + e.message)
     } finally {
@@ -355,46 +372,103 @@ function ComponentForm({
     }
   }
 
-  const handleImageRemove = async () => {
-    if (!form.image_url) return
-    try {
-      const supabase = createClient()
-      const path = form.image_url.split('/product-images/')[1]?.split('?')[0]
-      if (path) await supabase.storage.from('product-images').remove([path])
-    } catch {}
-    setForm({ ...form, image_url: '' })
+  // Not: dosya depodan silinmez — aynı görsel ana galeride/başka parçada kullanılıyor olabilir.
+  const removeImage = (url: string) => setForm({ ...form, images: form.images.filter((u) => u !== url) })
+
+  const moveImage = (index: number, dir: -1 | 1) => {
+    const target = index + dir
+    if (target < 0 || target >= form.images.length) return
+    const next = [...form.images]
+    ;[next[index], next[target]] = [next[target], next[index]]
+    setForm({ ...form, images: next })
+  }
+
+  const togglePicked = (url: string) => {
+    setForm({
+      ...form,
+      images: form.images.includes(url) ? form.images.filter((u) => u !== url) : [...form.images, url],
+    })
   }
 
   return (
     <div className="border border-[#222222]/40 rounded-xl p-4 space-y-3 bg-[#222222]/5">
-      {/* Görsel */}
-      <div className="space-y-1.5">
-        <Label>Parça Görseli</Label>
-        {form.image_url ? (
-          <div className="flex items-center gap-3">
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border bg-muted flex-shrink-0">
-              <Image src={form.image_url} alt="" fill className="object-cover" />
-            </div>
-            <button
-              type="button"
-              onClick={handleImageRemove}
-              className="flex items-center gap-1.5 text-xs text-destructive hover:underline"
-            >
-              <XIcon size={12} /> Görseli Kaldır
-            </button>
+      {/* Görseller */}
+      <div className="space-y-2">
+        <Label>Parça Görselleri</Label>
+
+        {form.images.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {form.images.map((url, i) => (
+              <div key={url} className="w-24">
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border bg-muted">
+                  <Image src={url} alt="" fill className="object-cover" sizes="96px" />
+                  {i === 0 && (
+                    <span className="absolute top-1 left-1 bg-[#222222] text-white text-[9px] px-1.5 py-0.5 rounded">Kapak</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(url)}
+                    aria-label="Görseli kaldır"
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/65 text-white flex items-center justify-center hover:bg-destructive"
+                  >
+                    <XIcon size={11} />
+                  </button>
+                </div>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <button type="button" onClick={() => moveImage(i, -1)} disabled={i === 0} aria-label="Öne al" className="h-6 w-6 rounded border border-border bg-white flex items-center justify-center disabled:opacity-30">
+                    <ChevronLeft size={12} />
+                  </button>
+                  <button type="button" onClick={() => moveImage(i, 1)} disabled={i === form.images.length - 1} aria-label="Sona al" className="h-6 w-6 rounded border border-border bg-white flex items-center justify-center disabled:opacity-30">
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
+        )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPickerOpen((o) => !o)}
+            disabled={productImages.length === 0}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-border bg-white rounded-lg text-xs hover:bg-muted/50 transition-colors disabled:opacity-50"
+          >
+            <ImagePlus size={14} className="text-muted-foreground" />
+            {productImages.length === 0 ? 'Ürün galerisi boş' : pickerOpen ? 'Seçimi Kapat' : 'Ürün Görsellerinden Seç'}
+          </button>
           <label className={`inline-flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-border rounded-lg hover:bg-muted/50 transition-colors ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>
-            {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} className="text-muted-foreground" />}
-            <span className="text-xs text-muted-foreground">{uploading ? 'Yükleniyor...' : 'Görsel Seç'}</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-              disabled={uploading}
-            />
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} className="text-muted-foreground" />}
+            <span className="text-xs text-muted-foreground">{uploading ? 'Yükleniyor...' : 'Yeni Görsel Yükle'}</span>
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} disabled={uploading} />
           </label>
+        </div>
+
+        {pickerOpen && productImages.length > 0 && (
+          <div className="rounded-lg border border-border bg-white p-3">
+            <p className="text-xs text-muted-foreground mb-2">Birden fazla görsel işaretleyebilirsiniz. Aynı görsel birden fazla parçada kullanılabilir.</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              {productImages.map((url) => {
+                const picked = form.images.includes(url)
+                return (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => togglePicked(url)}
+                    aria-pressed={picked}
+                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${picked ? 'border-[#222222]' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                  >
+                    <Image src={url} alt="" fill className="object-cover" sizes="(max-width: 640px) 30vw, 120px" />
+                    {picked && (
+                      <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#222222] text-white flex items-center justify-center">
+                        <Check size={12} />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         )}
       </div>
 

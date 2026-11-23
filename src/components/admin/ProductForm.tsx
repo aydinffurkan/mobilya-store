@@ -909,7 +909,7 @@ export default function ProductForm({
       {/* ━━ TAB: Parçalar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isEdit && (
         <div className={activeTab !== 'parcalar' ? 'hidden' : ''}>
-          <ComponentManager productId={product.id} components={product.components ?? []} templates={componentTemplates} categories={categories} />
+          <ComponentManager productId={product.id} productImages={images} components={product.components ?? []} templates={componentTemplates} categories={categories} />
         </div>
       )}
 

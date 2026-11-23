@@ -459,28 +459,43 @@ interface ComponentPayload {
   is_active: boolean
   sort_order: number
   image_url?: string | null
+  images?: string[]
 }
 
 export async function saveComponent(productId: string, componentId: string | null, payload: ComponentPayload) {
   await requireAdmin()
   const adminClient = createAdminClient()
 
+  // image_url, images[0] ile senkron tutulur (geriye dönük uyumluluk)
+  const body: ComponentPayload = {
+    ...payload,
+    image_url: payload.images ? (payload.images[0] ?? null) : payload.image_url ?? null,
+  }
+  // Migration henüz çalışmadıysa kolonu olmayan alanları atarak tekrar dene
+  const stripMissing = (message: string): Record<string, unknown> | null => {
+    const rest = { ...body } as Record<string, unknown>
+    let changed = false
+    if (/cost_price/.test(message)) { delete rest.cost_price; changed = true }
+    if (/\bimages\b/.test(message)) { delete rest.images; changed = true }
+    return changed ? rest : null
+  }
+
   if (componentId) {
     let { error } = await adminClient
       .from('product_components')
-      .update({ ...payload, updated_at: new Date().toISOString() })
+      .update({ ...body, updated_at: new Date().toISOString() })
       .eq('id', componentId)
-    if (error && /cost_price/.test(error.message)) {
-      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+    const rest = error ? stripMissing(error.message) : null
+    if (rest) {
       ;({ error } = await adminClient.from('product_components').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', componentId))
     }
     if (error) throw new Error(error.message)
   } else {
     let { error } = await adminClient
       .from('product_components')
-      .insert({ ...payload, product_id: productId, created_at: new Date().toISOString() })
-    if (error && /cost_price/.test(error.message)) {
-      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+      .insert({ ...body, product_id: productId, created_at: new Date().toISOString() })
+    const rest = error ? stripMissing(error.message) : null
+    if (rest) {
       ;({ error } = await adminClient.from('product_components').insert({ ...rest, product_id: productId, created_at: new Date().toISOString() }))
     }
     if (error) throw new Error(error.message)
@@ -683,7 +698,7 @@ export async function createProductFromComponent(componentId: string, categoryId
 
   const { data: comp } = await adminClient
     .from('product_components')
-    .select('name, unit_price, image_url, stock, product_id')
+    .select('*')
     .eq('id', componentId)
     .single()
   if (!comp) throw new Error('Parça bulunamadı')
@@ -709,7 +724,7 @@ export async function createProductFromComponent(componentId: string, categoryId
       price: comp.unit_price ?? 0,
       category_id: categoryId,
       stock: comp.stock ?? 0,
-      images: comp.image_url ? [comp.image_url] : [],
+      images: comp.images?.length ? comp.images : comp.image_url ? [comp.image_url] : [],
       is_active: true,
       created_at: new Date().toISOString(),
     })

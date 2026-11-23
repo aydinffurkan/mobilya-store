@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Share2, Check, Truck, ShieldCheck, Wrench, RotateCcw } from 'lucide-react'
@@ -62,13 +62,26 @@ export default function ProductDetailClient({ product, groupOptions = [] }: { pr
     setChangeRequest((r) => r + 1)
   }
 
+  // Parça görseline tıklanınca galeri o görsele atlar (ana galeride yoksa sona eklenir)
+  const [galleryFocus, setGalleryFocus] = useState<{ url: string; n: number } | null>(null)
+  const galleryRef = useRef<HTMLDivElement>(null)
+  const baseImages = product.images ?? []
+  const galleryImages = useMemo(
+    () => (galleryFocus && !baseImages.includes(galleryFocus.url) ? [...baseImages, galleryFocus.url] : baseImages),
+    [baseImages, galleryFocus]
+  )
+  const handleShowImage = (url: string) => {
+    setGalleryFocus((f) => ({ url, n: (f?.n ?? 0) + 1 }))
+    galleryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <>
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-12 xl:gap-x-20 gap-y-3 lg:gap-y-10 lg:items-start pt-4 lg:pt-8">
 
       {/* ── 1: Görsel — mobile'de en üstte ── */}
-      <div className="lg:col-span-7 lg:row-start-1">
-        <ProductImageGallery images={product.images ?? []} name={product.name} />
+      <div ref={galleryRef} className="lg:col-span-7 lg:row-start-1 scroll-mt-24">
+        <ProductImageGallery images={galleryImages} name={product.name} focus={galleryFocus} />
       </div>
 
       {/* ── 2: Satın alma — mobile'de görsel hemen altında ── */}
@@ -189,6 +202,7 @@ export default function ProductDetailClient({ product, groupOptions = [] }: { pr
           componentQuantities={componentQuantities}
           onComponentChange={handleComponentChange}
           changeRequest={changeRequest}
+          onShowImage={handleShowImage}
         />
       </div>
 
