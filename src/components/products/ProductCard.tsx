@@ -74,18 +74,6 @@ export default function ProductCard({ product }: { product: Product }) {
 
   const [idx,               setIdx]               = useState(0)
   const [touchStart,        setTouchStart]        = useState<number | null>(null)
-  // Kartın 4:3 kutusuna yakın oranlı görseller eskisi gibi kadrajı doldursun
-  // (object-cover); oranı belirgin farklı olanlar (kare, dikey, panoramik)
-  // ürünün bir kısmının kırpılmasını önlemek için tam gösterilsin (object-contain).
-  const [containByIdx, setContainByIdx] = useState<Record<number, boolean>>({})
-  const handleImgLoad = (i: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const el = e.currentTarget
-    if (!el.naturalWidth || !el.naturalHeight) return
-    const ratio = el.naturalWidth / el.naturalHeight
-    const target = 4 / 3
-    const deviates = Math.abs(ratio - target) / target > 0.15
-    if (deviates) setContainByIdx((prev) => (prev[i] ? prev : { ...prev, [i]: true }))
-  }
   const [showVariantPicker, setShowVariantPicker] = useState(false)
   const [groupOpen, setGroupOpen] = useState(false)
   const [groupOptions, setGroupOptions] = useState<GroupCardOption[]>([])
@@ -162,7 +150,7 @@ export default function ProductCard({ product }: { product: Product }) {
     >
       {/* ── Görsel ───────────────────────────────────── */}
       <div
-        className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#F8F8F6]"
+        className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#F8F8F6]"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onTouchStart={handleTouchStart}
@@ -180,12 +168,9 @@ export default function ProductCard({ product }: { product: Product }) {
                 alt={`${product.name} — ${i + 1}`}
                 fill
                 quality={95}
-                className={`transition-transform duration-500 ease-out group-hover:scale-105 ${
-                  containByIdx[i] ? 'object-contain' : 'object-cover'
-                }`}
-                sizes="(max-width: 640px) 50vw, 33vw"
+                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, (max-width: 1400px) 33vw, 480px"
                 loading={i === 0 ? 'eager' : 'lazy'}
-                onLoad={handleImgLoad(i)}
               />
             </div>
           ))

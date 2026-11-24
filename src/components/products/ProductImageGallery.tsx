@@ -77,7 +77,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
       {/* ── Ana büyük görsel ── */}
       <div
         ref={mainRef}
-        className="relative w-full aspect-[4/3] overflow-hidden cursor-zoom-in group"
+        className="relative w-full aspect-[4/5] md:aspect-[5/6] overflow-hidden cursor-zoom-in group bg-[#F8F8F6]"
         onClick={() => setModalOpen(true)}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
@@ -92,7 +92,8 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
           alt={`${name} — görsel ${selected + 1}`}
           fill
           priority
-          className="object-contain object-top transition-transform duration-500 group-hover:scale-[1.03]"
+          quality={95}
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 55vw"
         />
 
@@ -159,7 +160,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
                   key={`${url}-${realIndex}`}
                   type="button"
                   onClick={() => selectImage(realIndex)}
-                  className={`relative aspect-[4/3] w-full overflow-hidden transition-all duration-200 ${
+                  className={`relative aspect-[4/5] w-full overflow-hidden transition-all duration-200 ${
                     realIndex === selected
                       ? 'opacity-100 outline outline-2 outline-neutral-900 outline-offset-1'
                       : 'opacity-45 hover:opacity-80'
@@ -169,7 +170,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
                     src={url}
                     alt={`${name} ${realIndex + 1}`}
                     fill
-                    className="object-contain p-1"
+                    className="object-cover"
                     sizes="(max-width: 768px) 22vw, 12vw"
                   />
                 </button>
