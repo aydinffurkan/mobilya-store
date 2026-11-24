@@ -77,7 +77,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
       {/* ── Ana büyük görsel ── */}
       <div
         ref={mainRef}
-        className="relative w-full aspect-[4/5] md:aspect-[5/6] overflow-hidden cursor-zoom-in group bg-[#F8F8F6]"
+        className="relative w-full aspect-[4/5] md:aspect-square lg:max-h-[75vh] overflow-hidden cursor-zoom-in group bg-[#F8F8F6]"
         onClick={() => setModalOpen(true)}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
