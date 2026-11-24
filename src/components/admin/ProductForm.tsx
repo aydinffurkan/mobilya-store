@@ -5,7 +5,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,8 +15,10 @@ import VariantManager from '@/components/admin/VariantManager'
 import GroupManager from '@/components/admin/GroupManager'
 import ComponentManager from '@/components/admin/ComponentManager'
 import CopyFromProduct from '@/components/admin/CopyFromProduct'
+import SpecOptionPicker from '@/components/admin/SpecOptionPicker'
+import { getFilterableSpec, getRequiredSpecs, isWardrobeProduct, withRequiredSpecs } from '@/lib/productSpecs'
 import {
-  Category, Product, ProductSpec, ProductDimension, FAQItem,
+  Category, Product, SpecOption, ProductSpec, ProductDimension, FAQItem,
   VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate, Supplier, ProductVariant,
 } from '@/types'
 import { ImagePlus, X, Loader2, Pencil, Plus, GripVertical, ZoomIn } from 'lucide-react'
@@ -70,6 +72,8 @@ interface Props {
   dimensionTemplates?: DimensionTemplate[]
   specTemplates?: SpecTemplate[]
   faqTemplates?: FAQTemplate[]
+  /** Renk / Malzeme / Kapak Adedi için hazır seçenekler */
+  specOptions?: SpecOption[]
 }
 
 export default function ProductForm({
@@ -81,9 +85,22 @@ export default function ProductForm({
   dimensionTemplates = [],
   specTemplates = [],
   faqTemplates = [],
+  specOptions = [],
 }: Props) {
   const router  = useRouter()
   const isEdit  = !!product
+  const [optionList, setOptionList] = useState<SpecOption[]>(specOptions)
+
+  /** Kategorinin ve üst kategorilerinin ad + slug metinleri (dolap tespiti için) */
+  const categoryTexts = (categoryId?: string | null): string[] => {
+    const out: string[] = []
+    let cur = categories.find((c) => c.id === categoryId)
+    for (let depth = 0; cur && depth < 5; depth++) {
+      out.push(cur.name, cur.slug)
+      cur = categories.find((c) => c.id === cur!.parent_id)
+    }
+    return out
+  }
 
   // ── Tab ──────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabId>('genel')
@@ -204,7 +221,9 @@ export default function ProductForm({
   // ── Detaylar ─────────────────────────────────────────────────────────────
   const [featuredSpecs,    setFeaturedSpecs]    = useState<string[]>(product?.featured_specs ?? [])
   const [newFeaturedSpec,  setNewFeaturedSpec]  = useState('')
-  const [specs,            setSpecs]            = useState<ProductSpec[]>(product?.specs ?? [])
+  const [specs,            setSpecs]            = useState<ProductSpec[]>(
+    () => withRequiredSpecs(product?.specs ?? [], isWardrobeProduct(product?.name ?? '', categoryTexts(product?.category_id)))
+  )
   const [dimensions,       setDimensions]       = useState<ProductDimension[]>(product?.dimensions ?? [])
   const [faqItems,         setFaqItems]         = useState<FAQItem[]>(product?.faq_items ?? [])
   const [isSavingDetail,   setIsSavingDetail]   = useState(false)
@@ -230,9 +249,10 @@ export default function ProductForm({
   // Başka üründen kopyalama: replace = değiştir, append = aynı adlı satırları atlayarak ekle
   const applyCopiedSpecs = (items: ProductSpec[], mode: 'replace' | 'append') =>
     setSpecs((prev) => {
-      if (mode === 'replace') return items
-      const have = new Set(prev.map((s) => s.key.trim().toLowerCase()))
-      return [...prev, ...items.filter((s) => !have.has(s.key.trim().toLowerCase()))]
+      if (mode === 'replace') return withRequiredSpecs(items, isWardrobe)
+      // Ekle: sabit satırların boş değerleri kopyalanan değerle dolar, diğerleri aynı ad atlanarak eklenir
+      const have = new Set(prev.filter((s) => s.value.trim()).map((s) => s.key.trim().toLowerCase()))
+      return withRequiredSpecs([...prev, ...items.filter((s) => !have.has(s.key.trim().toLowerCase()))], isWardrobe)
     })
   const applyCopiedDimensions = (items: ProductDimension[], mode: 'replace' | 'append') =>
     setDimensions((prev) => {
@@ -270,7 +290,7 @@ export default function ProductForm({
     try {
       await saveProductDetailFields(product.id, {
         featured_specs: featuredSpecs,
-        specs: specs.filter((s) => s.key.trim()),
+        specs: specs.filter((s) => s.key.trim() && s.value.trim()),
         dimensions: dimensions.filter((d) => d.name.trim()),
         faq_items: faqItems.filter((f) => f.q.trim()),
       })
@@ -302,6 +322,13 @@ export default function ProductForm({
     },
   })
 
+  // Dolap / gardırop ürünlerinde "Kapak Adedi" özelliği de zorunlu satır olur
+  const isWardrobe = isWardrobeProduct(watch('name') ?? '', categoryTexts(watch('category_id')))
+  const requiredSpecs = getRequiredSpecs(isWardrobe)
+  useEffect(() => {
+    setSpecs((prev) => withRequiredSpecs(prev, isWardrobe))
+  }, [isWardrobe])
+
   const [profitPct, setProfitPct] = useState<string>(() => {
     if (product?.cost_price && product?.price && product.cost_price > 0) {
       return String(Math.round(((product.price / product.cost_price) - 1) * 100))
@@ -332,7 +359,7 @@ export default function ProductForm({
       cart_discount_percent: cartDiscountPct,
       images,
       featured_specs: featuredSpecs,
-      specs:          specs.filter((s) => s.key.trim()),
+      specs:          specs.filter((s) => s.key.trim() && s.value.trim()),
       dimensions:     dimensions.filter((d) => d.name.trim()),
     }
     try {
@@ -762,14 +789,14 @@ export default function ProductForm({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h4 className="text-sm font-semibold mb-0.5">Ürün Özellikleri (Teknik Tablo)</h4>
-                <p className="text-xs text-muted-foreground">Özellik adı + değer çiftlerinden oluşan teknik tablo.</p>
+                <p className="text-xs text-muted-foreground">Malzeme, Renk, Temizlik ve Garanti her üründe sabittir; sadece değerlerini doldurun (boş bırakılan satır sitede görünmez). Aşağıdan istediğiniz kadar ek satır ekleyebilirsiniz.</p>
               </div>
               {specTemplates.length > 0 && (
                 <select
                   defaultValue=""
                   onChange={(e) => {
                     const t = specTemplates.find((t) => t.id === e.target.value)
-                    if (t) { setSpecs(t.items.map((i) => ({ ...i }))); e.target.value = '' }
+                    if (t) { setSpecs(withRequiredSpecs(t.items.map((i) => ({ ...i })), isWardrobe)); e.target.value = '' }
                   }}
                   className="flex-shrink-0 text-xs border border-border rounded-lg px-2.5 py-1.5 bg-background text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-[#222222]/40 cursor-pointer"
                 >
@@ -790,21 +817,46 @@ export default function ProductForm({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {specs.map((spec, i) => (
+                    {specs.map((spec, i) => {
+                      const required = i < requiredSpecs.length
+                      const def = required ? requiredSpecs[i] : null
+                      return (
                       <tr key={i}>
                         <td className="py-1.5 px-2">
-                          <Input value={spec.key} onChange={(e) => updateSpec(i, 'key', e.target.value)} placeholder="Yatak Ölçüsü" className="h-8 text-sm" />
+                          {required ? (
+                            <div className="h-8 px-3 flex items-center text-sm font-medium bg-muted/40 rounded-md">{spec.key}</div>
+                          ) : (
+                            <Input value={spec.key} onChange={(e) => updateSpec(i, 'key', e.target.value)} placeholder="Yatak Ölçüsü" className="h-8 text-sm" />
+                          )}
                         </td>
                         <td className="py-1.5 px-2">
-                          <Input value={spec.value} onChange={(e) => updateSpec(i, 'value', e.target.value)} placeholder="160x200 cm" className="h-8 text-sm" />
+                          {required && getFilterableSpec(spec.key) ? (
+                            <SpecOptionPicker
+                              specKey={spec.key}
+                              options={optionList.filter((o) => o.spec_key === spec.key)}
+                              value={spec.value}
+                              onChange={(v) => updateSpec(i, 'value', v)}
+                              onOptionAdded={(opt) => setOptionList((prev) => prev.some((o) => o.id === opt.id) ? prev : [...prev, opt])}
+                            />
+                          ) : (
+                            <Input
+                              value={spec.value}
+                              onChange={(e) => updateSpec(i, 'value', e.target.value)}
+                              placeholder={def ? def.placeholder : '160x200 cm'}
+                              className="h-8 text-sm"
+                            />
+                          )}
                         </td>
                         <td className="py-1.5 pr-2 text-center">
-                          <button type="button" onClick={() => removeSpec(i)} className="text-muted-foreground hover:text-red-500 transition-colors">
-                            <X size={14} />
-                          </button>
+                          {!required && (
+                            <button type="button" onClick={() => removeSpec(i)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                              <X size={14} />
+                            </button>
+                          )}
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

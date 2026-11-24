@@ -5,6 +5,9 @@ import { Search, X, ChevronDown, Loader2 } from 'lucide-react'
 import ProductCard from './ProductCard'
 import { Category, Product } from '@/types'
 import type { ProductFilters } from '@/lib/repositories/products'
+import type { FacetGroup } from '@/lib/productSpecs'
+import { FILTER_PARAMS } from '@/lib/productSpecs'
+import SpecFilterBar from './SpecFilterBar'
 
 const PAGE_SIZE = 20
 
@@ -23,12 +26,16 @@ interface GridFilters {
   min: string
   max: string
   sort: SortOption
+  /** Renk / Kapak Adedi / Malzeme seçimleri (param → değerler) */
+  spec: Record<string, string[]>
 }
 
 interface ProductGridProps {
   initialProducts: Product[]
   totalCount: number
-  initialFilters: GridFilters
+  initialFilters: Omit<GridFilters, 'spec'> & { spec?: Record<string, string[]> }
+  /** Verilirse Renk / Kapak Adedi / Malzeme filtre çubuğu gösterilir */
+  initialFacets?: FacetGroup[]
   filterCategories?: Pick<Category, 'id' | 'name' | 'slug'>[]
   lockedCategory?: string
   lockedSupplier?: string
@@ -39,6 +46,7 @@ export default function ProductGrid({
   initialProducts,
   totalCount,
   initialFilters,
+  initialFacets,
   filterCategories,
   lockedCategory,
   lockedSupplier,
@@ -47,12 +55,15 @@ export default function ProductGrid({
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [total, setTotal] = useState(totalCount)
   const [offset, setOffset] = useState(initialProducts.length)
-  const [filters, setFilters] = useState<GridFilters>(initialFilters)
+  const normalizedInitial: GridFilters = { ...initialFilters, spec: initialFilters.spec ?? {} }
+  const [filters, setFilters] = useState<GridFilters>(normalizedInitial)
+  const [facets, setFacets] = useState<FacetGroup[]>(initialFacets ?? [])
+  const showSpecFilters = initialFacets !== undefined
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
 
-  const filtersRef = useRef<GridFilters>(initialFilters)
+  const filtersRef = useRef<GridFilters>(normalizedInitial)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sortDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -75,6 +86,10 @@ export default function ProductGrid({
     if (f.max) p.set('max', f.max)
     if (f.sort) p.set('sort', f.sort)
     if (lockedSupplier) p.set('supplier', lockedSupplier)
+    for (const param of FILTER_PARAMS) {
+      if (f.spec[param]?.length) p.set(param, f.spec[param].join(','))
+    }
+    if (showSpecFilters && off === 0) p.set('facets', '1')
     p.set('limit', String(PAGE_SIZE))
     p.set('offset', String(off))
     return `/api/products?${p}`
@@ -88,6 +103,9 @@ export default function ProductGrid({
     if (f.max) p.set('max', f.max)
     if (f.sort && f.sort !== 'newest') p.set('sort', f.sort)
     if (lockedSupplier) p.set('supplier', lockedSupplier)
+    for (const param of FILTER_PARAMS) {
+      if (f.spec[param]?.length) p.set(param, f.spec[param].join(','))
+    }
     const qs = p.toString()
     window.history.replaceState({}, '', qs ? `${basePath}?${qs}` : basePath)
   }
@@ -100,6 +118,7 @@ export default function ProductGrid({
       setProducts(json.data ?? [])
       setTotal(json.meta?.total ?? 0)
       setOffset((json.data ?? []).length)
+      if (json.meta?.facets) setFacets(json.meta.facets)
       updateUrl(f)
     } finally {
       setLoading(false)
@@ -123,7 +142,7 @@ export default function ProductGrid({
   }
 
   const clearAll = () => {
-    applyImmediate({ q: '', category: '', min: '', max: '', sort: 'newest' })
+    applyImmediate({ q: '', category: '', min: '', max: '', sort: 'newest', spec: {} })
   }
 
   const loadMore = async () => {
@@ -145,6 +164,7 @@ export default function ProductGrid({
     filters.min,
     filters.max,
     filters.sort !== 'newest' && filters.sort,
+    ...FILTER_PARAMS.map((param) => filters.spec[param]?.length),
   ].filter(Boolean).length
 
   return (
@@ -253,6 +273,15 @@ export default function ProductGrid({
               </button>
             ))}
           </div>
+        )}
+
+        {/* Renk / Kapak Adedi / Malzeme — seçenek adetleriyle */}
+        {showSpecFilters && facets.length > 0 && (
+          <SpecFilterBar
+            groups={facets}
+            selected={filters.spec}
+            onApply={(param, values) => applyImmediate({ spec: { ...filters.spec, [param]: values } })}
+          />
         )}
       </div>
 

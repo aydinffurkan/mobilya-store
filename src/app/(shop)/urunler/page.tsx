@@ -2,7 +2,9 @@ import Link from 'next/link'
 import ProductGrid from '@/components/products/ProductGrid'
 import { getTopLevelCategories, getCategoryIdsBySlug } from '@/lib/repositories/categories'
 import { getProductsPage } from '@/lib/repositories/products'
+import { getProductFacets } from '@/lib/repositories/products'
 import type { ProductFilters } from '@/lib/repositories/products'
+import { parseSpecFilters } from '@/lib/productSpecs'
 
 interface SearchParams {
   q?: string
@@ -12,6 +14,9 @@ interface SearchParams {
   sort?: string
   sepette_indirim?: string
   supplier?: string
+  renk?: string
+  kapak?: string
+  malzeme?: string
 }
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -29,17 +34,20 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     categorySlug ? getCategoryIdsBySlug(categorySlug) : Promise.resolve([] as string[]),
   ])
 
-  const page = await getProductsPage({
+  const specFilters = parseSpecFilters((p) => params[p as keyof SearchParams])
+  const baseFilters = {
     q: q || undefined,
     categoryIds: categoryIds.length ? categoryIds : undefined,
     minPrice,
     maxPrice,
-    sort,
     cartDiscount,
     supplierId,
-    limit: 20,
-    offset: 0,
-  })
+  }
+
+  const [page, facets] = await Promise.all([
+    getProductsPage({ ...baseFilters, specFilters, sort, limit: 20, offset: 0 }),
+    getProductFacets({ ...baseFilters, specFilters }),
+  ])
 
   const title = cartDiscount
     ? `Sepette %${cartDiscount} İndirimli Ürünler`
@@ -72,7 +80,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           min: params.min ?? '',
           max: params.max ?? '',
           sort: sort ?? 'newest',
+          spec: specFilters,
         }}
+        initialFacets={facets}
         filterCategories={categories}
         lockedSupplier={supplierId}
         basePath="/urunler"

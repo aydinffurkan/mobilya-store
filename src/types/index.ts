@@ -23,6 +23,14 @@ export interface Category {
   created_at: string
 }
 
+export interface SpecOption {
+  id: string
+  spec_key: string
+  value: string
+  color_hex: string | null
+  sort_order: number
+}
+
 export interface ProductSpec {
   key: string
   value: string
@@ -81,6 +89,7 @@ export interface Product {
   specs?: ProductSpec[]
   dimensions?: ProductDimension[]
   faq_items?: FAQItem[]
+  filter_tags?: string[]
 }
 
 export interface VariantTemplate {

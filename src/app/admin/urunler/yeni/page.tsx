@@ -1,6 +1,7 @@
 import ProductForm from '@/components/admin/ProductForm'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Category, Supplier, DimensionTemplate, SpecTemplate, FAQTemplate } from '@/types'
+import { Category, Supplier, DimensionTemplate, SpecTemplate, FAQTemplate, SpecOption } from '@/types'
+import { getSpecOptions } from '@/lib/repositories/specOptions'
 
 async function getData() {
   try {
@@ -11,14 +12,17 @@ async function getData() {
       { data: dimensionTemplates },
       { data: specTemplates },
       { data: faqTemplates },
+      specOptions,
     ] = await Promise.all([
       adminClient.from('categories').select('*').order('name'),
       adminClient.from('suppliers').select('*').order('name'),
       adminClient.from('dimension_templates').select('*').order('name'),
       adminClient.from('spec_templates').select('*').order('name'),
       adminClient.from('faq_templates').select('*').order('name'),
+      getSpecOptions(adminClient),
     ])
     return {
+      specOptions:        specOptions as SpecOption[],
       categories:         (categories         as Category[]         ) ?? [],
       suppliers:          (suppliers          as Supplier[]         ) ?? [],
       dimensionTemplates: (dimensionTemplates as DimensionTemplate[] ) ?? [],
@@ -26,12 +30,12 @@ async function getData() {
       faqTemplates:       (faqTemplates       as FAQTemplate[]       ) ?? [],
     }
   } catch {
-    return { categories: [], suppliers: [], dimensionTemplates: [], specTemplates: [], faqTemplates: [] }
+    return { categories: [], suppliers: [], dimensionTemplates: [], specTemplates: [], faqTemplates: [], specOptions: [] as SpecOption[] }
   }
 }
 
 export default async function NewProductPage() {
-  const { categories, suppliers, dimensionTemplates, specTemplates, faqTemplates } = await getData()
+  const { categories, suppliers, dimensionTemplates, specTemplates, faqTemplates, specOptions } = await getData()
 
   return (
     <div>
@@ -45,6 +49,7 @@ export default async function NewProductPage() {
         dimensionTemplates={dimensionTemplates}
         specTemplates={specTemplates}
         faqTemplates={faqTemplates}
+        specOptions={specOptions}
       />
     </div>
   )

@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/auth-guard'
-import { ComponentTemplateItem } from '@/types'
+import { ComponentTemplateItem, SpecOption } from '@/types'
+import { buildFilterTags, getSpecOptions } from '@/lib/repositories/specOptions'
+import { getFilterableSpec, sanitizeOptionValue } from '@/lib/productSpecs'
 
 interface ProductPayload {
   name: string
@@ -26,30 +28,47 @@ interface ProductPayload {
   dimensions?: { name: string; width: string; depth: string; height: string }[]
 }
 
+/** Henüz çalıştırılmamış migration'ların kolonlarını atarak kaydetmek için */
+function stripMissingProductColumns(body: Record<string, unknown>, message: string): Record<string, unknown> | null {
+  const rest = { ...body }
+  let changed = false
+  if (/cost_price/.test(message)) { delete rest.cost_price; changed = true }
+  if (/filter_tags/.test(message)) { delete rest.filter_tags; changed = true }
+  return changed ? rest : null
+}
+
 export async function saveProduct(productId: string | null, payload: ProductPayload, variants?: VariantPayload[]): Promise<{ id: string }> {
   await requireAdmin()
   const adminClient = createAdminClient()
   let id = productId
 
+  // Özellikler seçeneklerle eşleştirilir, filtre etiketleri çıkarılır
+  const body: Record<string, unknown> = { ...payload }
+  if (payload.specs) {
+    const built = await buildFilterTags(adminClient, payload.specs)
+    body.specs = built.specs
+    body.filter_tags = built.tags
+  }
+
   if (productId) {
     let { error } = await adminClient
       .from('products')
-      .update({ ...payload, updated_at: new Date().toISOString() })
+      .update({ ...body, updated_at: new Date().toISOString() })
       .eq('id', productId)
-    if (error && /cost_price/.test(error.message)) {
-      // cost_price kolonu henüz eklenmemişse (migration bekliyor) onsuz kaydet
-      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+    const rest = error ? stripMissingProductColumns(body, error.message) : null
+    if (rest) {
+      // cost_price / filter_tags kolonu henüz eklenmemişse (migration bekliyor) onsuz kaydet
       ;({ error } = await adminClient.from('products').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', productId))
     }
     if (error) throw new Error(error.message)
   } else {
     let { data, error } = await adminClient
       .from('products')
-      .insert({ ...payload, created_at: new Date().toISOString() })
+      .insert({ ...body, created_at: new Date().toISOString() })
       .select('id')
       .single()
-    if (error && /cost_price/.test(error.message)) {
-      const rest = { ...payload } as Record<string, unknown>; delete rest.cost_price
+    const rest = error ? stripMissingProductColumns(body, error.message) : null
+    if (rest) {
       ;({ data, error } = await adminClient.from('products').insert({ ...rest, created_at: new Date().toISOString() }).select('id').single())
     }
     if (error || !data) throw new Error(error?.message ?? 'Ürün oluşturulamadı')
@@ -398,13 +417,49 @@ export async function saveProductDetailFields(
 ) {
   await requireAdmin()
   const adminClient = createAdminClient()
-  const { error } = await adminClient
+  const built = await buildFilterTags(adminClient, fields.specs)
+  const body: Record<string, unknown> = { ...fields, specs: built.specs, filter_tags: built.tags }
+  let { error } = await adminClient
     .from('products')
-    .update({ ...fields, updated_at: new Date().toISOString() })
+    .update({ ...body, updated_at: new Date().toISOString() })
     .eq('id', productId)
+  const rest = error ? stripMissingProductColumns(body, error.message) : null
+  if (rest) {
+    ;({ error } = await adminClient.from('products').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', productId))
+  }
   if (error) throw new Error(error.message)
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
+}
+
+/** Filtrelenebilir bir özelliğe (Renk / Malzeme / Kapak Adedi) yeni hazır seçenek ekler */
+export async function addSpecOption(
+  specKey: string,
+  value: string,
+  colorHex?: string | null
+): Promise<SpecOption> {
+  await requireAdmin()
+  const def = getFilterableSpec(specKey)
+  if (!def) throw new Error('Bu özellik için seçenek eklenemez')
+  const clean = sanitizeOptionValue(value)
+  if (!clean) throw new Error('Seçenek adı gerekli')
+
+  const adminClient = createAdminClient()
+  const existing = await getSpecOptions(adminClient)
+  const hit = existing.find(
+    (o) => o.spec_key === def.key && o.value.toLocaleLowerCase('tr-TR') === clean.toLocaleLowerCase('tr-TR')
+  )
+  if (hit) return hit // zaten var — yenisini oluşturma
+
+  const hex = colorHex && /^#[0-9a-fA-F]{6}$/.test(colorHex) ? colorHex : null
+  const maxOrder = existing.filter((o) => o.spec_key === def.key).reduce((m, o) => Math.max(m, o.sort_order), -1)
+  const { data, error } = await adminClient
+    .from('spec_options')
+    .insert({ spec_key: def.key, value: clean, color_hex: hex, sort_order: maxOrder + 1 })
+    .select('id, spec_key, value, color_hex, sort_order')
+    .single()
+  if (error || !data) throw new Error(error?.message ?? 'Seçenek eklenemedi (migration çalıştırıldı mı?)')
+  return data as SpecOption
 }
 
 interface VariantPayload {
@@ -731,7 +786,7 @@ export async function createProductFromComponent(componentId: string, categoryId
   if (!comp) throw new Error('Parça bulunamadı')
 
   // Ürün adının başına bağlı olduğu takım ürününün ilk kelimesini ekle
-  const { data: parent } = await adminClient.from('products').select('name, specs, featured_specs').eq('id', comp.product_id).single()
+  const { data: parent } = await adminClient.from('products').select('*').eq('id', comp.product_id).single()
   const firstWord = (parent?.name ?? '').trim().split(/\s+/)[0] ?? ''
   const finalName = firstWord ? `${firstWord} ${comp.name}` : comp.name
 
@@ -755,6 +810,11 @@ export async function createProductFromComponent(componentId: string, categoryId
       // Özellikler ana üründen miras alınır; ölçü parçanın kendi ölçüsüdür
       specs: parent?.specs ?? [],
       featured_specs: parent?.featured_specs ?? [],
+      // filter_tags kolonu yoksa (migration bekliyor) undefined kalır ve eklenmez
+      // (kapak adedi parçaya özgüdür, ana üründen miras alınmaz)
+      ...(parent?.filter_tags
+        ? { filter_tags: (parent.filter_tags as string[]).filter((t) => !t.startsWith('kapak:')) }
+        : {}),
       dimensions: (comp.dim_width || comp.dim_depth || comp.dim_height)
         ? [{ name: comp.name, width: comp.dim_width ?? '', depth: comp.dim_depth ?? '', height: comp.dim_height ?? '' }]
         : [],

@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
 import ProductForm from '@/components/admin/ProductForm'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Category, Product, Supplier, VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate } from '@/types'
+import { Category, Product, Supplier, VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate, SpecOption } from '@/types'
+import { getSpecOptions } from '@/lib/repositories/specOptions'
 
 async function getData(id: string): Promise<{
   product: Product
@@ -12,6 +13,7 @@ async function getData(id: string): Promise<{
   dimensionTemplates: DimensionTemplate[]
   specTemplates: SpecTemplate[]
   faqTemplates: FAQTemplate[]
+  specOptions: SpecOption[]
 } | null> {
   try {
     const adminClient = createAdminClient()
@@ -26,6 +28,7 @@ async function getData(id: string): Promise<{
       { data: dimensionTemplates },
       { data: specTemplates },
       { data: faqTemplates },
+      specOptions,
     ] = await Promise.all([
       adminClient.from('products').select('*').eq('id', id).single(),
       adminClient.from('categories').select('*').order('name'),
@@ -37,6 +40,7 @@ async function getData(id: string): Promise<{
       adminClient.from('dimension_templates').select('*').order('name'),
       adminClient.from('spec_templates').select('*').order('name'),
       adminClient.from('faq_templates').select('*').order('name'),
+      getSpecOptions(adminClient),
     ])
     if (!product) return null
     return {
@@ -48,6 +52,7 @@ async function getData(id: string): Promise<{
       dimensionTemplates: (dimensionTemplates as DimensionTemplate[] ) ?? [],
       specTemplates:      (specTemplates      as SpecTemplate[]      ) ?? [],
       faqTemplates:       (faqTemplates       as FAQTemplate[]       ) ?? [],
+      specOptions,
     }
   } catch {
     return null
@@ -75,6 +80,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         dimensionTemplates={data.dimensionTemplates}
         specTemplates={data.specTemplates}
         faqTemplates={data.faqTemplates}
+        specOptions={data.specOptions}
       />
     </div>
   )
