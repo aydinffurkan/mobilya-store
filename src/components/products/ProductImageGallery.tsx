@@ -53,6 +53,8 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus?.n])
 
+  const [wideBySrc, setWideBySrc] = useState<Record<string, boolean>>({})
+
   useEffect(() => {
     document.body.style.overflow = modalOpen ? 'hidden' : 'unset'
     return () => { document.body.style.overflow = 'unset' }
@@ -69,6 +71,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
     )
   }
 
+  const isWide = wideBySrc[images[selected]] === true
   const visibleThumbs = images.slice(thumbStart, thumbStart + THUMB_VISIBLE)
 
   return (
@@ -77,7 +80,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
       {/* ── Ana büyük görsel ── */}
       <div
         ref={mainRef}
-        className="relative w-full aspect-[4/5] md:aspect-square lg:max-h-[75vh] overflow-hidden cursor-zoom-in group bg-[#F8F8F6]"
+        className="relative w-full aspect-[4/3] md:aspect-[3/2] overflow-hidden cursor-zoom-in group bg-[#F8F8F6]"
         onClick={() => setModalOpen(true)}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
@@ -87,14 +90,31 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
           touchStartX.current = null
         }}
       >
+        {!isWide && (
+          <Image
+            src={images[selected]}
+            alt=""
+            aria-hidden
+            fill
+            quality={40}
+            className="object-cover scale-110 blur-2xl opacity-60"
+            sizes="64px"
+          />
+        )}
         <Image
           src={images[selected]}
           alt={`${name} — görsel ${selected + 1}`}
           fill
           priority
           quality={95}
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          className={`transition-transform duration-500 group-hover:scale-[1.02] ${isWide ? 'object-cover' : 'object-contain'}`}
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 55vw"
+          onLoad={(e) => {
+            const el = e.currentTarget
+            if (!el.naturalWidth || !el.naturalHeight) return
+            const wide = el.naturalWidth / el.naturalHeight >= 1.25
+            setWideBySrc((prev) => (prev[images[selected]] === wide ? prev : { ...prev, [images[selected]]: wide }))
+          }}
         />
 
         {/* Sol/sağ ok — sadece birden fazla görsel varsa */}
@@ -160,7 +180,7 @@ export default function ProductImageGallery({ images, name, focus }: Props) {
                   key={`${url}-${realIndex}`}
                   type="button"
                   onClick={() => selectImage(realIndex)}
-                  className={`relative aspect-[4/5] w-full overflow-hidden transition-all duration-200 ${
+                  className={`relative aspect-[3/2] w-full overflow-hidden bg-[#F8F8F6] transition-all duration-200 ${
                     realIndex === selected
                       ? 'opacity-100 outline outline-2 outline-neutral-900 outline-offset-1'
                       : 'opacity-45 hover:opacity-80'
