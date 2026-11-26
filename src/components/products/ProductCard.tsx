@@ -74,6 +74,14 @@ export default function ProductCard({ product }: { product: Product }) {
 
   const [idx,               setIdx]               = useState(0)
   const [touchStart,        setTouchStart]        = useState<number | null>(null)
+  // Çoğu ürün fotoğrafı yatay (~3:2) ve kartı doldurur. Dikey/kare olanlar
+  // kırpılmasın diye tam gösterilir; arkada aynı görselin bulanık hali durur.
+  const [tallByIdx, setTallByIdx] = useState<Record<number, boolean>>({})
+  const handleImgLoad = (i: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const el = e.currentTarget
+    if (!el.naturalWidth || !el.naturalHeight) return
+    if (el.naturalWidth / el.naturalHeight < 1.2) setTallByIdx((prev) => (prev[i] ? prev : { ...prev, [i]: true }))
+  }
   const [showVariantPicker, setShowVariantPicker] = useState(false)
   const [groupOpen, setGroupOpen] = useState(false)
   const [groupOptions, setGroupOptions] = useState<GroupCardOption[]>([])
@@ -150,7 +158,7 @@ export default function ProductCard({ product }: { product: Product }) {
     >
       {/* ── Görsel ───────────────────────────────────── */}
       <div
-        className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#F8F8F6]"
+        className="relative aspect-[3/2] overflow-hidden rounded-xl bg-[#F8F8F6]"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onTouchStart={handleTouchStart}
@@ -163,12 +171,24 @@ export default function ProductCard({ product }: { product: Product }) {
               key={src}
               className={`absolute inset-0 transition-opacity duration-200 ${i === idx ? 'opacity-100' : 'opacity-0'}`}
             >
+              {tallByIdx[i] && (
+                <Image
+                  src={src}
+                  alt=""
+                  aria-hidden
+                  fill
+                  quality={40}
+                  className="object-cover scale-110 blur-2xl opacity-60"
+                  sizes="48px"
+                />
+              )}
               <Image
                 src={src}
                 alt={`${product.name} — ${i + 1}`}
                 fill
                 quality={95}
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                onLoad={handleImgLoad(i)}
+                className={`transition-transform duration-500 ease-out group-hover:scale-105 ${tallByIdx[i] ? 'object-contain' : 'object-cover'}`}
                 sizes="(max-width: 640px) 50vw, (max-width: 1400px) 33vw, 480px"
                 loading={i === 0 ? 'eager' : 'lazy'}
               />
