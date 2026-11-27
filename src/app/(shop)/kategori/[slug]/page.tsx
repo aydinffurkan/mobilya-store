@@ -2,14 +2,18 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ProductGrid from '@/components/products/ProductGrid'
 import { getCategoryBySlug, getCategoryById, getSubcategories } from '@/lib/repositories/categories'
-import { getProductsPage } from '@/lib/repositories/products'
+import { getProductsPage, getProductFacets } from '@/lib/repositories/products'
 import type { ProductFilters } from '@/lib/repositories/products'
+import { parseSpecFilters } from '@/lib/productSpecs'
 
 interface SearchParams {
   sort?: string
   q?: string
   min?: string
   max?: string
+  renk?: string
+  kapak?: string
+  malzeme?: string
 }
 
 export default async function CategoryPage({
@@ -33,15 +37,18 @@ export default async function CategoryPage({
 
   const categoryIds = [category.id, ...subcategories.map((s) => s.id)]
 
-  const page = await getProductsPage({
+  const specFilters = parseSpecFilters((p) => sp[p as keyof SearchParams])
+  const baseFilters = {
     categoryIds,
     q: sp.q?.trim() || undefined,
     minPrice: sp.min ? Number(sp.min) : undefined,
     maxPrice: sp.max ? Number(sp.max) : undefined,
-    sort,
-    limit: 20,
-    offset: 0,
-  })
+  }
+
+  const [page, facets] = await Promise.all([
+    getProductsPage({ ...baseFilters, specFilters, sort, limit: 20, offset: 0 }),
+    getProductFacets({ ...baseFilters, specFilters }),
+  ])
 
   return (
     <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -87,7 +94,9 @@ export default async function CategoryPage({
           min: sp.min ?? '',
           max: sp.max ?? '',
           sort: sort ?? 'newest',
+          spec: specFilters,
         }}
+        initialFacets={facets}
         lockedCategory={slug}
         basePath={`/kategori/${slug}`}
       />
