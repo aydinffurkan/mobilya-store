@@ -29,6 +29,30 @@ interface ProductPayload {
   dimensions?: { name: string; width: string; depth: string; height: string }[]
 }
 
+/**
+ * Parçalı ürünlerde satış fiyatı = aktif parçaların (varsayılan adet × birim fiyat)
+ * toplamı. Ürün kartı ile detay sayfası aynı fiyatı göstersin diye her parça
+ * değişikliğinden sonra çağrılır. Aktif parçası olmayan ürüne dokunmaz.
+ */
+async function syncPriceFromComponents(adminClient: ReturnType<typeof createAdminClient>, productId: string) {
+  const { data: comps } = await adminClient
+    .from('product_components')
+    .select('unit_price, default_quantity, is_active')
+    .eq('product_id', productId)
+  const active = (comps ?? []).filter((c: { is_active: boolean }) => c.is_active)
+  if (active.length === 0) return
+  const total = active.reduce(
+    (sum: number, c: { unit_price: number; default_quantity: number }) => sum + Number(c.unit_price) * Number(c.default_quantity),
+    0
+  )
+  // İndirimli fiyat parçalı üründe kullanılmaz (detay sayfası da parça toplamını gösterir)
+  const { error } = await adminClient
+    .from('products')
+    .update({ price: total, sale_price: null, updated_at: new Date().toISOString() })
+    .eq('id', productId)
+  if (error) throw new Error(error.message)
+}
+
 /** Henüz çalıştırılmamış migration'ların kolonlarını atarak kaydetmek için */
 function stripMissingProductColumns(body: Record<string, unknown>, message: string): Record<string, unknown> | null {
   const rest = { ...body }
@@ -85,6 +109,9 @@ export async function saveProduct(productId: string | null, payload: ProductPayl
       if (vErr) throw new Error(vErr.message)
     }
   }
+
+  // Parçalı üründe elle girilen fiyat yerine parça toplamı geçerlidir
+  await syncPriceFromComponents(adminClient, id!)
 
   revalidatePath('/admin/urunler')
   // Ürün detay sayfasını slug ile açıkça tazele — iç içe dinamik rotanın
@@ -566,6 +593,8 @@ export async function saveComponent(productId: string, componentId: string | nul
     if (error) throw new Error(error.message)
   }
 
+  await syncPriceFromComponents(adminClient, productId)
+
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
 }
@@ -594,8 +623,10 @@ export async function searchProductsForCopy(
 export async function deleteComponent(componentId: string) {
   await requireAdmin()
   const adminClient = createAdminClient()
+  const { data: comp } = await adminClient.from('product_components').select('product_id').eq('id', componentId).single()
   const { error } = await adminClient.from('product_components').delete().eq('id', componentId)
   if (error) throw new Error(error.message)
+  if (comp?.product_id) await syncPriceFromComponents(adminClient, comp.product_id)
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')
 }
@@ -676,6 +707,7 @@ export async function applyComponentTemplate(productId: string, templateId: stri
 
   const { error } = await adminClient.from('product_components').insert(rows)
   if (error) throw new Error(error.message)
+  await syncPriceFromComponents(adminClient, productId)
 
   revalidatePath('/admin/urunler')
   revalidatePath('/', 'layout')

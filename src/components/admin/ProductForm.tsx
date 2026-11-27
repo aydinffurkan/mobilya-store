@@ -29,7 +29,8 @@ const schema = z.object({
   name:        z.string().min(2, 'Ürün adı en az 2 karakter'),
   slug:        z.string().min(2, 'Slug en az 2 karakter'),
   description: z.string().optional(),
-  price:       z.coerce.number().min(1, 'Fiyat giriniz'),
+  // Parçalı üründe fiyat parça toplamından hesaplanır; bu yüzden 0 kabul edilir
+  price:       z.coerce.number().min(0, 'Geçerli bir fiyat giriniz'),
   cost_price:  z.coerce.number().optional(),
   sale_price:       z.coerce.number().optional(),
   category_id: z.string().min(1, 'Kategori seçiniz'),
@@ -351,6 +352,11 @@ export default function ProductForm({
       .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o')
       .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')
 
+  // Parçalı ürün: satış fiyatı sunucuda aktif parçaların toplamına eşitlenir
+  const activeComponents = (product?.components ?? []).filter((c) => c.is_active)
+  const usesComponentPricing = activeComponents.length > 0
+  const componentsTotal = activeComponents.reduce((sum, c) => sum + c.unit_price * c.default_quantity, 0)
+
   const onSubmit = async (data: FormData) => {
     const payload = {
       ...data,
@@ -494,14 +500,28 @@ export default function ProductForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="price">Satış Fiyatı (₺) *</Label>
-                <Input id="price" type="number" {...register('price')} min={0} />
+                <Label htmlFor="price">Satış Fiyatı (₺)</Label>
+                {usesComponentPricing ? (
+                  <>
+                    <div className="h-9 px-3 flex items-center text-sm font-medium bg-muted/40 rounded-md border border-border">
+                      {componentsTotal.toLocaleString('tr-TR')} ₺
+                    </div>
+                    <p className="text-xs text-muted-foreground">Parçaların toplamından otomatik hesaplanır.</p>
+                  </>
+                ) : (
+                  <>
+                    <Input id="price" type="number" {...register('price')} min={0} />
+                    <p className="text-xs text-muted-foreground">Parça ekleyecekseniz boş bırakabilirsiniz; fiyat parçalardan hesaplanır.</p>
+                  </>
+                )}
                 {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="sale_price">İndirimli Fiyat (₺)</Label>
-                <Input id="sale_price" type="number" {...register('sale_price')} min={0} placeholder="Opsiyonel" />
-              </div>
+              {!usesComponentPricing && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="sale_price">İndirimli Fiyat (₺)</Label>
+                  <Input id="sale_price" type="number" {...register('sale_price')} min={0} placeholder="Opsiyonel" />
+                </div>
+              )}
             </div>
 
 
