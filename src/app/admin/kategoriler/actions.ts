@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/auth-guard'
 import { CategoryPromoCard } from '@/types'
+import { slugifyTr } from '@/lib/slug'
 
 interface CategoryPayload {
   name: string
@@ -16,6 +17,9 @@ interface CategoryPayload {
 export async function saveCategory(categoryId: string | null, payload: CategoryPayload) {
   await requireAdmin()
   const adminClient = createAdminClient()
+  // Elle girilen slug'da Türkçe karakter/boşluk kalırsa kategori sayfası açılmaz
+  payload = { ...payload, slug: slugifyTr(payload.slug) || slugifyTr(payload.name) }
+  if (!payload.slug) throw new Error('Geçerli bir slug giriniz')
 
   if (categoryId) {
     const { error } = await adminClient.from('categories').update(payload).eq('id', categoryId)

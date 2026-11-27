@@ -1,5 +1,6 @@
 'use client'
 
+import { slugifyTr } from '@/lib/slug'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
@@ -57,12 +58,6 @@ export default function CategoryForm({ category, categories = [] }: { category?:
     },
   })
 
-  const autoSlug = (name: string) =>
-    name
-      .toLowerCase()
-      .replace(/ç/g, 'c').replace(/ş/g, 's').replace(/ı/g, 'i')
-      .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ö/g, 'o')
-      .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -111,7 +106,7 @@ export default function CategoryForm({ category, categories = [] }: { category?:
             {...register('name')}
             onChange={(e) => {
               register('name').onChange(e)
-              if (!isEdit) setValue('slug', autoSlug(e.target.value))
+              if (!isEdit) setValue('slug', slugifyTr(e.target.value))
             }}
           />
           {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}

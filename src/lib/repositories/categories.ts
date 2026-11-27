@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { Category } from '@/types'
+import { decodeSlug } from '@/lib/slug'
 
 export async function getCategories(): Promise<Category[]> {
   try {
@@ -48,7 +49,7 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
     const { data } = await supabase
       .from('categories')
       .select('*')
-      .eq('slug', slug)
+      .eq('slug', decodeSlug(slug))
       .single()
     return (data as Category) ?? null
   } catch {

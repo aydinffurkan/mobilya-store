@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { decodeSlug } from '@/lib/slug'
 import { createClient } from '@/lib/supabase/server'
 import { Product } from '@/types'
 import { getSpecOptions } from '@/lib/repositories/specOptions'
@@ -285,7 +286,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     const { data } = await supabase
       .from('products')
       .select(PRODUCT_SELECT)
-      .eq('slug', slug)
+      .eq('slug', decodeSlug(slug))
       .eq('is_active', true)
       .single()
     return (data as Product) ?? null

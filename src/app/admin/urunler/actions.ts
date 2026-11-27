@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/supabase/auth-guard'
 import { ComponentTemplateItem, SpecOption } from '@/types'
 import { buildFilterTags, getSpecOptions } from '@/lib/repositories/specOptions'
 import { getFilterableSpec, sanitizeOptionValue } from '@/lib/productSpecs'
+import { slugifyTr } from '@/lib/slug'
 
 interface ProductPayload {
   name: string
@@ -41,6 +42,9 @@ export async function saveProduct(productId: string | null, payload: ProductPayl
   await requireAdmin()
   const adminClient = createAdminClient()
   let id = productId
+
+  // Elle girilen slug'da Türkçe karakter/boşluk kalırsa ürün sayfası açılmaz
+  payload = { ...payload, slug: slugifyTr(payload.slug) || slugifyTr(payload.name) }
 
   // Özellikler seçeneklerle eşleştirilir, filtre etiketleri çıkarılır
   const body: Record<string, unknown> = { ...payload }
@@ -766,12 +770,6 @@ export async function setGroupTitle(productId: string, title: string): Promise<v
 }
 
 // ─── Parçadan ayrı ürün oluştur (bağımsız kopya) ──────────────────────────────
-
-function slugifyTr(str: string): string {
-  const map: Record<string, string> = { ç:'c', ğ:'g', ı:'i', ö:'o', ş:'s', ü:'u', Ç:'c', Ğ:'g', İ:'i', Ö:'o', Ş:'s', Ü:'u' }
-  return str.split('').map((ch) => map[ch] ?? ch).join('')
-    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-}
 
 export async function createProductFromComponent(componentId: string, categoryId: string): Promise<{ id: string; name: string }> {
   await requireAdmin()
