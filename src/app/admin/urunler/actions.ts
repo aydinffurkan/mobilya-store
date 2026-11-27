@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/auth-guard'
 import { ComponentTemplateItem, SpecOption } from '@/types'
 import { buildFilterTags, getSpecOptions } from '@/lib/repositories/specOptions'
-import { getFilterableSpec, sanitizeOptionValue } from '@/lib/productSpecs'
+import { getFilterableSpec, inheritableSpecs, sanitizeOptionValue } from '@/lib/productSpecs'
 import { slugifyTr } from '@/lib/slug'
 
 interface ProductPayload {
@@ -796,6 +796,11 @@ export async function createProductFromComponent(componentId: string, categoryId
   let n = 2
   while (taken.has(slug)) slug = `${base}-${n++}`
 
+  // Özellikler: Renk/Malzeme/Temizlik/Garanti her zaman, diğerleri yalnızca
+  // ana üründe "Parçaya aktar" tikliyse kopyalanır. Filtre etiketleri bu
+  // özelliklerden yeniden üretilir (kapak adedi gibi parçaya özgü olanlar taşınmaz).
+  const built = await buildFilterTags(adminClient, inheritableSpecs(parent?.specs ?? []))
+
   const { data: prod, error } = await adminClient
     .from('products')
     .insert({
@@ -803,16 +808,15 @@ export async function createProductFromComponent(componentId: string, categoryId
       slug,
       price: comp.unit_price ?? 0,
       category_id: categoryId,
+      // Tedarikçi her zaman ana ürünle aynı
+      supplier_id: parent?.supplier_id ?? null,
       stock: comp.stock ?? 0,
       images: comp.images?.length ? comp.images : comp.image_url ? [comp.image_url] : [],
-      // Özellikler ana üründen miras alınır; ölçü parçanın kendi ölçüsüdür
-      specs: parent?.specs ?? [],
+      // Ölçü parçanın kendi ölçüsüdür
+      specs: built.specs,
       featured_specs: parent?.featured_specs ?? [],
-      // filter_tags kolonu yoksa (migration bekliyor) undefined kalır ve eklenmez
-      // (kapak adedi parçaya özgüdür, ana üründen miras alınmaz)
-      ...(parent?.filter_tags
-        ? { filter_tags: (parent.filter_tags as string[]).filter((t) => !t.startsWith('kapak:')) }
-        : {}),
+      // filter_tags kolonu yoksa (migration bekliyor) eklenmez
+      ...(parent && 'filter_tags' in parent ? { filter_tags: built.tags } : {}),
       dimensions: (comp.dim_width || comp.dim_depth || comp.dim_height)
         ? [{ name: comp.name, width: comp.dim_width ?? '', depth: comp.dim_depth ?? '', height: comp.dim_height ?? '' }]
         : [],

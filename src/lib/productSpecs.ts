@@ -16,6 +16,22 @@ export const ALL_REQUIRED_SPECS: RequiredSpecDef[] = [
   { key: 'Garanti',      placeholder: '2 yıl' },
 ]
 
+// ── Parçadan türetilen ürünlere aktarım ─────────────────────────────────────
+/** Parçadan ürün oluşturulurken ana üründen her zaman kopyalanan özellikler */
+export const ALWAYS_INHERITED_SPECS = ['Renk', 'Malzeme', 'Temizlik', 'Garanti']
+
+export function isAlwaysInheritedSpec(specKey: string): boolean {
+  const k = norm(specKey)
+  return ALWAYS_INHERITED_SPECS.some((s) => norm(s) === k)
+}
+
+/** Ana ürünün özelliklerinden, parçadan türetilen ürüne geçecek olanları seçer */
+export function inheritableSpecs(specs: ProductSpec[]): ProductSpec[] {
+  return specs
+    .filter((s) => s.key.trim() && s.value.trim() && (isAlwaysInheritedSpec(s.key) || s.inherit))
+    .map((s) => ({ key: s.key, value: s.value }))
+}
+
 export function getRequiredSpecs(isWardrobe: boolean): RequiredSpecDef[] {
   return ALL_REQUIRED_SPECS.filter((r) => !r.wardrobeOnly || isWardrobe)
 }
@@ -112,7 +128,7 @@ export function withRequiredSpecs(specs: ProductSpec[], isWardrobe = false): Pro
   const requiredKeys = new Set(required.map((r) => norm(r.key)))
   const head = required.map((r) => {
     const existing = specs.find((s) => norm(s.key) === norm(r.key) && s.value.trim())
-    return { key: r.key, value: existing?.value ?? '' }
+    return { key: r.key, value: existing?.value ?? '', ...(existing?.inherit ? { inherit: true } : {}) }
   })
   const conditionalKeys = new Set(ALL_REQUIRED_SPECS.map((r) => norm(r.key)))
   const rest = specs.filter((s) => {

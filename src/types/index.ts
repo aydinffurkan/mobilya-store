@@ -34,6 +34,8 @@ export interface SpecOption {
 export interface ProductSpec {
   key: string
   value: string
+  /** true ise parçalardan türetilen ürünlere de kopyalanır */
+  inherit?: boolean
 }
 
 export interface ProductDimension {

@@ -16,7 +16,7 @@ import GroupManager from '@/components/admin/GroupManager'
 import ComponentManager from '@/components/admin/ComponentManager'
 import CopyFromProduct from '@/components/admin/CopyFromProduct'
 import SpecOptionPicker from '@/components/admin/SpecOptionPicker'
-import { getFilterableSpec, getRequiredSpecs, isWardrobeProduct, withRequiredSpecs } from '@/lib/productSpecs'
+import { getFilterableSpec, getRequiredSpecs, isAlwaysInheritedSpec, isWardrobeProduct, withRequiredSpecs } from '@/lib/productSpecs'
 import {
   Category, Product, SpecOption, ProductSpec, ProductDimension, FAQItem,
   VariantTemplate, ComponentTemplate, DimensionTemplate, SpecTemplate, FAQTemplate, Supplier, ProductVariant,
@@ -240,6 +240,8 @@ export default function ProductForm({
   const updateSpec = (i: number, field: 'key' | 'value', val: string) =>
     setSpecs((p) => p.map((s, idx) => idx === i ? { ...s, [field]: val } : s))
   const removeSpec = (i: number) => setSpecs((p) => p.filter((_, idx) => idx !== i))
+  const toggleSpecInherit = (i: number) =>
+    setSpecs((p) => p.map((s, idx) => idx === i ? { ...s, inherit: !s.inherit || undefined } : s))
 
   const addDimension    = () => setDimensions((p) => [...p, { name: '', width: '', depth: '', height: '' }])
   const updateDimension = (i: number, field: keyof ProductDimension, val: string) =>
@@ -808,11 +810,17 @@ export default function ProductForm({
             <CopyFromProduct<ProductSpec> kind="specs" excludeId={product?.id} onApply={applyCopiedSpecs} />
             {specs.length > 0 && (
               <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
-                <table className="w-full text-sm min-w-[480px]">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead className="bg-muted/40 border-b border-border">
                     <tr>
                       <th className="text-left py-2 px-3 font-medium text-muted-foreground w-2/5">Özellik Adı</th>
                       <th className="text-left py-2 px-3 font-medium text-muted-foreground">Değer</th>
+                      <th
+                        className="py-2 px-2 font-medium text-muted-foreground text-xs text-center w-20"
+                        title="Tiklenen özellikler, bu ürünün parçalarından oluşturulan ürünlere de kopyalanır. Renk, Malzeme, Temizlik ve Garanti her zaman kopyalanır."
+                      >
+                        Parçaya aktar
+                      </th>
                       <th className="w-8"></th>
                     </tr>
                   </thead>
@@ -844,6 +852,19 @@ export default function ProductForm({
                               onChange={(e) => updateSpec(i, 'value', e.target.value)}
                               placeholder={def ? def.placeholder : '160x200 cm'}
                               className="h-8 text-sm"
+                            />
+                          )}
+                        </td>
+                        <td className="py-1.5 px-2 text-center">
+                          {isAlwaysInheritedSpec(spec.key) ? (
+                            <input type="checkbox" checked disabled title="Her zaman aktarılır" className="h-4 w-4 accent-[#222222] opacity-50" />
+                          ) : (
+                            <input
+                              type="checkbox"
+                              checked={!!spec.inherit}
+                              onChange={() => toggleSpecInherit(i)}
+                              title="Parçalardan oluşturulan ürünlere ekle"
+                              className="h-4 w-4 accent-[#222222] cursor-pointer"
                             />
                           )}
                         </td>
